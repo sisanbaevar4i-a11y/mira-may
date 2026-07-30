@@ -504,7 +504,7 @@ export default function Home() {
 
           <div className="text-lg md:text-2xl font-['Cinzel',serif] font-bold tracking-[0.2em] md:tracking-[0.3em] text-[#112a1a] flex items-center gap-3">
             <RoseLogo />
-            <span>MIRA <span className="text-[#059669]">MAY</span></span>
+            <span><span className="text-[#059669]">MIRA</span> MAY</span>
           </div>
 
           <div className="relative">
@@ -551,7 +551,7 @@ export default function Home() {
           </div>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2">
             {t.hero_title_1} <br className="hidden md:block"/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#059669] to-[#2d4a35]">{t.hero_title_vector}</span> {t.hero_title_2}
+            <span className="text-[#059669]">{t.hero_title_vector}</span> {t.hero_title_2}
           </h1>
         </div>
       </div>
@@ -734,7 +734,7 @@ export default function Home() {
             <div className="md:col-span-2 space-y-6">
               <div className="text-xl md:text-2xl font-['Cinzel',serif] font-bold tracking-[0.2em] text-[#112a1a] flex items-center gap-3">
                 <RoseLogo />
-                <span>MIRA <span className="text-[#059669]">MAY</span></span>
+                <span><span className="text-[#059669]">MIRA</span> MAY</span>
               </div>
               <p className="text-[#4a6b52] text-sm leading-relaxed max-w-sm font-medium">
                 {t.footer_desc}
