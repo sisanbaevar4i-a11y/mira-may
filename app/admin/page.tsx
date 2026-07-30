@@ -86,15 +86,36 @@ export default function AdminDashboard() {
     setRetrogrades(items => items.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
-  // Обработчик для сетки календаря (обновление словаря)
+  // Интеллектуальный обработчик сетки календаря (Авто-синхронизация)
   const handleNakshatraGridChange = (dateStr: string, field: 'time_ru' | 'text_ru' | 'time_en' | 'text_en', value: string) => {
-    setNakshatrasMap(prev => ({
-      ...prev,
-      [dateStr]: {
-        ...(prev[dateStr] || { time_ru: '', text_ru: '', time_en: '', text_en: '' }),
-        [field]: value
+    setNakshatrasMap(prev => {
+      const prevData = prev[dateStr] || { time_ru: '', text_ru: '', time_en: '', text_en: '' };
+      const updates: any = { [field]: value };
+
+      // Синхронизация названий накшатр по индексу
+      if (field === 'text_ru') {
+        const idx = NAKSHATRAS_RU.indexOf(value);
+        if (idx !== -1) updates.text_en = NAKSHATRAS_EN[idx];
+      } else if (field === 'text_en') {
+        const idx = NAKSHATRAS_EN.indexOf(value);
+        if (idx !== -1) updates.text_ru = NAKSHATRAS_RU[idx];
       }
-    }));
+
+      // Зеркалирование времени
+      if (field === 'time_ru') {
+        updates.time_en = value;
+      } else if (field === 'time_en') {
+        updates.time_ru = value;
+      }
+
+      return {
+        ...prev,
+        [dateStr]: {
+          ...prevData,
+          ...updates
+        }
+      };
+    });
   };
 
   const addRetrograde = () => {
@@ -256,7 +277,7 @@ export default function AdminDashboard() {
             <div>
               <div className="text-indigo-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-1 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Admin Terminal v5.0 (Selector Active)
+                Admin Terminal v5.1 (Auto-Sync Module)
               </div>
               <h1 className="text-2xl md:text-3xl font-['Cinzel',serif] font-bold text-white tracking-wide">Панель управления контентом</h1>
             </div>
