@@ -1,65 +1,820 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../lib/supabaseClient';
+
+// --- ЛИНГВИСТИЧЕСКОЕ ЯДРО ---
+const DICTIONARY: Record<string, Record<string, string>> = {
+  RU: {
+    nav_forecasts: "Прогнозы",
+    nav_nakshatra: "Календарь накшатр",
+    nav_retrograde: "Ретроградные планеты",
+    nav_learn: "Статьи по астрологии",
+    hero_badge: "Космические ориентиры судьбы",
+    hero_title_1: "Твой личный",
+    hero_title_vector: "вектор",
+    hero_title_2: "сквозь звезды",
+    ephemeris_title: "Текущие транзиты",
+    ephemeris_status: "LIVE",
+    why_title: "Почему это работает",
+    why_1_title: "Ясность ума",
+    why_1_desc: "Снижение тревожности за счет понимания текущих планетарных циклов и их влияния.",
+    why_2_title: "Точность действий",
+    why_2_desc: "Синхронизация личных запусков и проектов с благоприятными астро-периодами.",
+    why_3_title: "Отношения",
+    why_3_desc: "Глубокое понимание динамики межличностных связей через призму совместимости.",
+    why_4_title: "Высокая энергия",
+    why_4_desc: "Сохранение внутреннего баланса и фокуса, избегая сопротивления глобальным энергиям.",
+    grid_subtitle: "Инструменты",
+    grid_title: "Астрологическая навигация",
+    grid_1_title: "Ежедневный прогноз",
+    grid_1_desc: "Короткие транзиты для ежедневного планирования и фокуса.",
+    btn_1: "Открыть прогноз",
+    grid_2_title: "Ежемесячный прогноз",
+    grid_2_desc: "Глобальные тенденции и энергии на предстоящие 30 дней.",
+    btn_2: "Открыть прогноз",
+    grid_3_title: "Ежегодный прогноз",
+    grid_3_desc: "Фундаментальные циклы, определяющие векторы развития года.",
+    btn_3: "Открыть прогноз",
+    footer_desc: "Интеллектуальная система анализа планетных энергий и транзитов. Мы переводим язык звезд на понятные ориентиры для твоей личной эффективности и осознанности.",
+    footer_nav_title: "Модули",
+    footer_access_title: "Доступ",
+    footer_login: "Вход в терминал",
+    footer_rights: "Все права защищены.",
+    footer_slogan: "Создано в гармонии со вселенной",
+    modal_telemetry: "Звездная телеметрия",
+    modal_fallback: "Прогноз для данного периода еще не загружен в ядро. Ожидайте синхронизации.",
+    planetarium_badge: "Собственная визуализация",
+    planetarium_title: "Интерактивная сфера",
+    planetarium_desc: "Генеративная модель звездного неба. Ядро рассчитывает положения частиц в реальном времени. Взаимодействуйте со сферой с помощью курсора.",
+    calendar_title: "Июль 2026",
+    calendar_time: "МСК (UTC+3)"
+  },
+  EN: {
+    nav_forecasts: "Forecasts",
+    nav_nakshatra: "Nakshatra Calendar",
+    nav_retrograde: "Retrograde Planets",
+    nav_learn: "Astrology Articles",
+    hero_badge: "Cosmic destiny guides",
+    hero_title_1: "Your personal",
+    hero_title_vector: "vector",
+    hero_title_2: "through the stars",
+    ephemeris_title: "Current Transits",
+    ephemeris_status: "LIVE",
+    why_title: "Why it works",
+    why_1_title: "Mental Clarity",
+    why_1_desc: "Reducing anxiety by understanding current planetary cycles and their influence.",
+    why_2_title: "Precision of Action",
+    why_2_desc: "Synchronizing personal launches and projects with favorable astro-periods.",
+    why_3_title: "Relationships",
+    why_3_desc: "Deep understanding of interpersonal dynamics through the prism of compatibility.",
+    why_4_title: "High Energy",
+    why_4_desc: "Maintaining internal balance and focus, avoiding resistance to global energies.",
+    grid_subtitle: "Instruments",
+    grid_title: "Astrological Navigation",
+    grid_1_title: "Daily Forecast",
+    grid_1_desc: "Short transits for daily planning and focus.",
+    btn_1: "Open Forecast",
+    grid_2_title: "Monthly Forecast",
+    grid_2_desc: "Global trends and energies for the upcoming 30 days.",
+    btn_2: "Open Forecast",
+    grid_3_title: "Yearly Forecast",
+    grid_3_desc: "Fundamental cycles defining the development vectors of the year.",
+    btn_3: "Open Forecast",
+    footer_desc: "Intelligent system for analyzing planetary energies and transits. We translate the language of the stars into clear guidelines for your personal efficiency and awareness.",
+    footer_nav_title: "Modules",
+    footer_access_title: "Access",
+    footer_login: "Terminal Login",
+    footer_rights: "All rights reserved.",
+    footer_slogan: "Created in harmony with the universe",
+    modal_telemetry: "Stellar Telemetry",
+    modal_fallback: "Forecast for this period has not been loaded into the core yet. Awaiting synchronization.",
+    planetarium_badge: "Proprietary Visualization",
+    planetarium_title: "Interactive Sphere",
+    planetarium_desc: "Generative starfield model. The core calculates particle positions in real-time. Interact with the sphere using your cursor.",
+    calendar_title: "July 2026",
+    calendar_time: "MSK (UTC+3)"
+  }
+};
+
+const LANGUAGES = [
+  { code: 'RU', name: 'Русский' },
+  { code: 'EN', name: 'English' }
+];
+
+const RoseLogo = () => (
+  <svg
+    className="w-10 h-10 md:w-12 md:h-12 text-[#059669] transform hover:scale-105 transition-transform duration-500 drop-shadow-sm flex-shrink-0"
+    viewBox="0 0 100 100"
+    fill="white"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M 60 20 C 70 5 95 10 90 25 C 85 40 65 35 60 20 Z" fill="#ecf4e3" />
+    <path d="M 65 25 L 85 18 M 70 25 L 80 30" strokeWidth="1" />
+    <path d="M 65 70 C 85 75 95 95 80 95 C 65 95 55 80 65 70 Z" fill="#ecf4e3" />
+    <path d="M 70 78 L 85 90 M 75 80 L 85 75" strokeWidth="1" />
+    <path d="M 35 70 C 15 75 5 95 20 95 C 35 95 45 80 35 70 Z" fill="#ecf4e3" />
+    <path d="M 30 78 L 15 90 M 25 80 L 15 75" strokeWidth="1" />
+    <path d="M 15 45 C 5 25 35 10 50 15 C 65 10 95 25 85 45 C 95 65 75 85 50 80 C 25 85 5 65 15 45 Z" fill="white" />
+    <path d="M 20 40 C 20 60 40 75 50 75 C 60 75 80 60 80 40 C 80 20 60 15 50 20 C 40 15 20 20 20 40 Z" fill="#ecf4e3" />
+    <path d="M 25 35 C 25 55 40 65 50 65 C 60 65 75 55 75 35 C 75 25 60 20 50 25 C 40 20 25 25 25 35 Z" fill="white" />
+    <path d="M 32 40 C 32 55 42 60 50 60 C 58 60 68 55 68 40 C 68 30 55 28 50 32 C 45 28 32 30 32 40 Z" fill="#ecf4e3" />
+    <path d="M 38 42 C 38 52 45 55 50 55 C 55 55 62 52 62 42 C 62 35 55 35 50 38 C 45 35 38 35 38 42 Z" fill="white" />
+    <path d="M 45 42 C 45 48 55 48 55 42 C 55 38 45 38 45 42" fill="none" strokeWidth="2" />
+    <path d="M 48 43 C 48 45 52 45 52 43 C 52 41 48 41 48 43" fill="#059669" />
+    <path d="M 15 45 Q 35 60 50 65 Q 65 60 85 45" fill="none" strokeWidth="1.5" />
+    <path d="M 20 40 Q 40 55 50 60 Q 60 55 80 40" fill="none" strokeWidth="1" />
+    <path d="M 25 35 Q 45 50 50 55 Q 55 50 75 35" fill="none" strokeWidth="1" />
+    <path d="M 10 50 C 25 65 40 80 50 80 C 60 80 75 65 90 50" fill="none" strokeWidth="1" />
+  </svg>
+);
+
+const StarField = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let stars: { x: number, y: number, radius: number, vx: number, vy: number, alpha: number }[] = [];
+    const numStars = window.innerWidth < 768 ? 60 : 150;
+    let mouseX = -1000;
+    let mouseY = -1000;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      initStars();
+    };
+
+    const initStars = () => {
+      stars = [];
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.5 + 0.5,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          alpha: Math.random()
+        });
+      }
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      stars.forEach(star => {
+        star.x += star.vx;
+        star.y += star.vy;
+
+        star.alpha += (Math.random() - 0.5) * 0.02;
+        if (star.alpha < 0.1) star.alpha = 0.1;
+        if (star.alpha > 1) star.alpha = 1;
+
+        if (star.x < 0 || star.x > canvas.width) star.vx *= -1;
+        if (star.y < 0 || star.y > canvas.height) star.vy *= -1;
+
+        const dx = mouseX - star.x;
+        const dy = mouseY - star.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        let offsetX = 0;
+        let offsetY = 0;
+        if (distance < 150) {
+          offsetX = -dx * 0.05;
+          offsetY = -dy * 0.05;
+        }
+
+        ctx.beginPath();
+        ctx.arc(star.x + offsetX, star.y + offsetY, star.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(5, 150, 105, ${star.alpha})`;
+        ctx.fill();
+      });
+
+      for (let i = 0; i < stars.length; i++) {
+        for (let j = i + 1; j < stars.length; j++) {
+          const dx = stars[i].x - stars[j].x;
+          const dy = stars[i].y - stars[j].y;
+          const distance = Math.sqrt(dx*dx + dy*dy);
+
+          if (distance < 80) {
+            ctx.beginPath();
+            ctx.moveTo(stars[i].x, stars[i].y);
+            ctx.lineTo(stars[j].x, stars[j].y);
+            ctx.strokeStyle = `rgba(45, 74, 53, ${0.15 - distance/533})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    window.addEventListener('resize', resize);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    };
+
+    const handleMouseLeave = () => {
+      mouseX = -1000;
+      mouseY = -1000;
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+
+    resize();
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="w-full h-full absolute inset-0 cursor-crosshair z-10"
+      style={{ background: 'transparent' }}
+    />
+  );
+};
+
+const FlameIcon = () => (
+  <svg className="w-6 h-6 text-[#059669] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+  </svg>
+);
+
+const Icons = {
+  Globe: () => (
+    <svg className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  Telegram: () => (
+    <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+    </svg>
+  ),
+  Instagram: () => (
+    <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+    </svg>
+  ),
+};
 
 export default function Home() {
+  const [forecasts, setForecasts] = useState<any[]>([]);
+  const [ephemerisData, setEphemerisData] = useState<any[]>([]);
+  const [activeModal, setActiveModal] = useState<any | null>(null);
+  const [currentLang, setCurrentLang] = useState('RU');
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const [isEphLoading, setIsEphLoading] = useState(true);
+
+  const t = DICTIONARY[currentLang];
+
+  useEffect(() => {
+    async function fetchForecasts() {
+      try {
+        const { data, error } = await supabase.from('forecasts').select('*');
+        if (error) throw error;
+        if (data) setForecasts(data);
+      } catch (err) {
+        console.error('Ошибка загрузки данных:', err);
+      }
+    }
+
+    async function fetchEphemeris() {
+      try {
+        const res = await fetch('/api/ephemeris');
+        if (res.ok) {
+          const data = await res.json();
+          setEphemerisData(data);
+        }
+      } catch (err) {
+        console.error('Ошибка телеметрии:', err);
+      } finally {
+        setIsEphLoading(false);
+      }
+    }
+
+    fetchForecasts();
+    fetchEphemeris();
+  }, []);
+
+  const handleOpenForecast = (type: string) => {
+    const match = forecasts.find(f => f.period_type === type && f.lang_code === currentLang);
+    if (match) {
+      setActiveModal(match);
+    } else {
+      setActiveModal({ period_type: type, content: t.modal_fallback });
+    }
+  };
+
+  const handleOpenRetrogrades = () => {
+    const isRU = currentLang === 'RU';
+    const tableContent = (
+      <div className="overflow-x-auto w-full relative z-10">
+        <table className="w-full text-left border-collapse min-w-[500px] bg-white rounded-xl shadow-sm">
+          <thead>
+            <tr className="border-b border-[#d0e5c0] text-[#059669] text-xs uppercase tracking-wider bg-[#ecf4e3]">
+              <th className="py-4 px-4 font-bold">{isRU ? "Период (с - до)" : "Period"}</th>
+              <th className="py-4 px-4 font-bold">{isRU ? "Планета" : "Planet"}</th>
+              <th className="py-4 px-4 font-bold">{isRU ? "Транзит" : "Transit"}</th>
+            </tr>
+          </thead>
+          <tbody className="text-sm md:text-base text-[#2d4a35] font-medium">
+            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+              <td className="py-4 px-4 whitespace-nowrap">11.11.2025 — 11.03.2026</td>
+              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                <span className="text-[#059669] text-lg">♃</span> {isRU ? "Юпитер" : "Jupiter"}
+              </td>
+              <td className="py-4 px-4">{isRU ? "до 05.12.2025 — в Раке, после — в Близнецах" : "until 05.12.2025 in Cancer, then in Gemini"}</td>
+            </tr>
+            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+              <td className="py-4 px-4 whitespace-nowrap">26.02.2026 — 20.03.2026</td>
+              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
+              </td>
+              <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Водолее" : "in Aquarius the entire time"}</td>
+            </tr>
+            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+              <td className="py-4 px-4 whitespace-nowrap">29.06.2026 — 23.07.2026</td>
+              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
+              </td>
+              <td className="py-4 px-4">{isRU ? "до 07.07.2026 — в Раке, после — в Близнецах" : "until 07.07.2026 in Cancer, then in Gemini"}</td>
+            </tr>
+            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+              <td className="py-4 px-4 whitespace-nowrap">26.07.2026 — 10.12.2026</td>
+              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                <span className="text-[#059669] text-lg">♄</span> {isRU ? "Сатурн" : "Saturn"}
+              </td>
+              <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Рыбах" : "in Pisces the entire time"}</td>
+            </tr>
+            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+              <td className="py-4 px-4 whitespace-nowrap">03.10.2026 — 14.11.2026</td>
+              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                <span className="text-[#059669] text-lg">♀</span> {isRU ? "Венера" : "Venus"}
+              </td>
+              <td className="py-4 px-4">{isRU ? "до 05.11.2026 — в Весах, после — в Деве" : "until 05.11.2026 in Libra, then in Virgo"}</td>
+            </tr>
+            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+              <td className="py-4 px-4 whitespace-nowrap">24.10.2026 — 13.11.2026</td>
+              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
+              </td>
+              <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Весах" : "in Libra the entire time"}</td>
+            </tr>
+            <tr className="border-transparent hover:bg-[#ecf4e3]/50 transition-colors">
+              <td className="py-4 px-4 whitespace-nowrap">13.12.2026 — 13.04.2027</td>
+              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                <span className="text-[#059669] text-lg">♃</span> {isRU ? "Юпитер" : "Jupiter"}
+              </td>
+              <td className="py-4 px-4">{isRU ? "до 24.01.2027 — во Льве, после — в Раке" : "until 24.01.2027 in Leo, then in Cancer"}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+    setActiveModal({ period_type: 'retrograde', content: tableContent });
+  };
+
+  const handleOpenNakshatra = () => {
+    const isRU = currentLang === 'RU';
+    const daysOfWeek = isRU ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const activeNakshatrasData = isRU ? {
+      1: "Уттара Ашадха\n(с 4:21)", 2: "Шравана\n(с 6:58)", 3: "Дхаништха\n(с 9:16)", 4: "Сатабиша\n(с 11:13)",
+      5: "Пурва Бхадрапада (с 12:42)\nУттара Бхадрапада (с 14:17)", 6: "Пурва Бхадрапада (до 13:37)",
+      7: "Уттара Бхадрапада (до 13:54)", 8: "Ревати (до 13:30)",
+      9: "Ашвини (до 12:27)", 10: "Бхарани (до 10:46)",
+      11: "Рохини\n(с 8:35)", 12: "Мригашира\n(с 6:00)", 13: "Ардра\n(до 20:01)",
+      14: "Пунарвасу\n(до 12:45)", 15: "Пушья\n(с 9:22)", 16: "Ашлеша\n(до 17:23)",
+      17: "Магха\n(до 16:06)", 18: "Пурва Пхалгуни (до 15:31)",
+      19: "Хаста (с 15:43)", 20: "Хаста", 21: "Читра (весь день)",
+      22: "Свати", 23: "Вишакха", 24: "Анурадха\n(с 6:44)", 25: "Джиештха",
+      26: "Мула\n(с 5:05)", 27: "Пурва Ашадха (до 13:46)",
+      28: "Уттара Ашадха", 29: "Шравана", 30: "Шравана\n(весь день)", 31: "Дхаништха\n(до 16:58)"
+    } : {
+      1: "Uttara Ashadha\n(from 4:21)", 2: "Shravana\n(from 6:58)", 3: "Dhanishtha\n(from 9:16)", 4: "Shatabhisha\n(from 11:13)",
+      5: "Purva Bhadrapada (from 12:42)", 6: "Purva Bhadrapada (until 13:37)",
+      7: "Uttara Bhadrapada (until 13:54)", 8: "Revati (until 13:30)",
+      9: "Ashvini (until 12:27)", 10: "Bharani (until 10:46)",
+      11: "Rohini\n(from 8:35)", 12: "Mrigashira\n(from 6:00)", 13: "Ardra\n(until 20:01)",
+      14: "Punarvasu\n(until 12:45)", 15: "Pushya\n(from 9:22)", 16: "Ashlesha\n(until 17:23)",
+      17: "Magha\n(until 16:06)", 18: "Purva Phalguni (until 15:31)",
+      19: "Hasta (from 15:43)", 20: "Hasta", 21: "Chitra (all day)",
+      22: "Svati", 23: "Vishakha", 24: "Anuradha\n(from 6:44)", 25: "Jyeshtha",
+      26: "Mula\n(from 5:05)", 27: "Purva Ashadha (until 13:46)",
+      28: "Uttara Ashadha", 29: "Shravana", 30: "Shravana\n(all day)", 31: "Dhanishtha\n(until 16:58)"
+    };
+
+    const calendarCells = [];
+    calendarCells.push({ day: 29, isCurrentMonth: false, data: null });
+    calendarCells.push({ day: 30, isCurrentMonth: false, data: null });
+    for (let i = 1; i <= 31; i++) {
+      calendarCells.push({ day: i, isCurrentMonth: true, data: activeNakshatrasData[i as keyof typeof activeNakshatrasData] });
+    }
+    calendarCells.push({ day: 1, isCurrentMonth: false, data: null });
+    calendarCells.push({ day: 2, isCurrentMonth: false, data: null });
+
+    const calendarContent = (
+      <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10">
+        <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-5 flex justify-between items-center">
+          <h4 className="text-lg md:text-2xl font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase">{t.calendar_title}</h4>
+          <div className="text-[10px] md:text-sm text-[#059669] uppercase tracking-widest bg-white px-2 md:px-3 py-1.5 rounded border border-[#d0e5c0]">
+            {t.calendar_time}
+          </div>
+        </div>
+        <div className="grid grid-cols-7 bg-[#e4eed8]">
+          {daysOfWeek.map((d, i) => (
+            <div key={d} className={`py-3 text-center text-[10px] md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
+              {d}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
+          {calendarCells.map((cell, index) => (
+            <div key={index} className={`min-h-[90px] md:min-h-[140px] p-1.5 md:p-3 border-b border-r border-[#d0e5c0] flex flex-col transition-colors ${cell.isCurrentMonth ? 'bg-white hover:bg-[#ecf4e3]' : 'bg-[#ecf4e3]/30 opacity-60'} ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
+              <div className={`text-right text-xs md:text-base font-bold mb-1 md:mb-2 ${cell.isCurrentMonth ? ((index % 7 > 4) ? 'text-[#059669]' : 'text-[#112a1a]') : 'text-[#4a6b52]'}`}>
+                {cell.day}
+              </div>
+              {cell.data && (
+                <div className="mt-auto text-[9px] md:text-xs leading-tight md:leading-snug text-[#2d4a35] font-medium whitespace-pre-wrap break-words">
+                  {cell.data}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+    setActiveModal({ period_type: 'nakshatra', content: calendarContent });
+  };
+
+  const scrollToGrid = () => {
+    document.getElementById('navigation-grid')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen bg-[#ecf4e3] text-[#2d4a35] font-['Montserrat',sans-serif] relative overflow-x-hidden selection:bg-[#059669] selection:text-white [-webkit-tap-highlight-color:transparent]">
+
+      <style dangerouslySetInnerHTML={{__html: `
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700;800&family=Montserrat:wght@300;400;500;600&display=swap');
+
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(208, 229, 192, 0.4); border-radius: 4px; margin: 4px 0; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(5, 150, 105, 0.6); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(5, 150, 105, 0.9); }
+
+        @keyframes ticker {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        .animate-ticker {
+          display: flex;
+          width: max-content;
+          animation: ticker 40s linear infinite;
+          will-change: transform;
+        }
+        .animate-ticker:hover { animation-play-state: paused; }
+      `}} />
+
+      {isLangOpen && <div className="fixed inset-0 z-40" onClick={() => setIsLangOpen(false)} />}
+
+      <div className="w-full bg-[#ecf4e3]/90 backdrop-blur-xl border-b border-[#d0e5c0] relative z-50 shadow-sm">
+        <div className="max-w-screen-2xl mx-auto flex justify-between items-center py-3 px-4 md:px-8">
+
+          <div className="text-lg md:text-2xl font-['Cinzel',serif] font-bold tracking-[0.2em] md:tracking-[0.3em] text-[#112a1a] flex items-center gap-3">
+            <RoseLogo />
+            <span>MIRA <span className="text-[#059669]">MAY</span></span>
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => setIsLangOpen(!isLangOpen)}
+              className="flex items-center gap-1.5 text-[#4a6b52] hover:text-[#059669] text-xs md:text-sm font-bold tracking-wider transition-colors duration-300 py-1.5 px-2.5 rounded-lg border border-[#d0e5c0] bg-white/50"
+            >
+              <Icons.Globe /> {currentLang}
+            </button>
+
+            {isLangOpen && (
+              <div className="absolute top-full right-0 mt-3 w-40 bg-white border border-[#d0e5c0] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] py-2 animate-fade-in-up">
+                {LANGUAGES.map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => { setCurrentLang(lang.code); setIsLangOpen(false); }}
+                    className={`w-full text-left px-5 py-2.5 text-sm transition-all duration-200 ${
+                      currentLang === lang.code
+                        ? 'text-[#059669] bg-[#ecf4e3] font-bold'
+                        : 'text-[#2d4a35] hover:text-[#059669] hover:bg-[#ecf4e3]/50'
+                    }`}
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="relative w-full py-16 md:py-24 flex flex-col items-center justify-center overflow-hidden text-center px-4">
+        <div className="absolute inset-0 bg-[#ecf4e3]"></div>
+        <img
+          src="https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=2070&auto=format&fit=crop"
+          alt="Space Header"
+          className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-multiply"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+        <div className="absolute inset-0 bg-gradient-to-b from-[#ecf4e3]/90 via-[#ecf4e3]/70 to-[#ecf4e3]" />
+
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <div className="inline-block px-4 py-1.5 mb-5 md:mb-6 rounded-full border border-[#059669]/30 bg-[#059669]/10 text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] font-bold shadow-sm backdrop-blur-sm">
+            {t.hero_badge}
+          </div>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2">
+            {t.hero_title_1} <br className="hidden md:block"/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#059669] to-[#2d4a35]">{t.hero_title_vector}</span> {t.hero_title_2}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      <div className="w-full bg-[#e4eed8] border-y border-[#d0e5c0] py-3 overflow-hidden relative flex items-center shadow-sm">
+        <div className="absolute left-0 top-0 bottom-0 z-10 bg-gradient-to-r from-[#e4eed8] via-[#e4eed8] to-transparent w-28 md:w-40 flex items-center px-4 md:px-8 border-r border-[#d0e5c0]/50">
+          <div className="flex flex-col">
+            <span className="text-[9px] md:text-[10px] uppercase tracking-widest text-[#059669] font-bold flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse"></span>
+              {t.ephemeris_status}
+            </span>
+            <span className="text-[10px] md:text-xs text-[#4a6b52] uppercase tracking-wider hidden sm:block mt-0.5 font-bold">{t.ephemeris_title}</span>
+          </div>
         </div>
-      </main>
+
+        <div className="overflow-hidden w-full pl-28 md:pl-40">
+          {isEphLoading ? (
+            <div className="text-[#059669]/50 text-xs uppercase tracking-widest pl-4 font-bold animate-pulse py-2">
+              СИНХРОНИЗАЦИЯ...
+            </div>
+          ) : (
+            <div className="animate-ticker flex gap-8 md:gap-12 items-center cursor-default">
+              {[...ephemerisData, ...ephemerisData, ...ephemerisData].map((planet, index) => (
+                <div key={index} className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-lg md:text-xl text-[#059669] font-bold">{planet.symbol}</span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] md:text-xs text-[#4a6b52] uppercase tracking-wider font-bold">
+                      {currentLang === 'RU' ? planet.nameRu : planet.name}
+                    </span>
+                    <span className="text-xs md:text-sm font-bold text-[#112a1a] flex items-center gap-1">
+                      <span className="text-[#059669]">{planet.sign}</span> {planet.degree}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-[#e4eed8] to-transparent w-12 md:w-24"></div>
+      </div>
+
+      <nav className="w-full bg-[#ecf4e3] border-b border-[#d0e5c0] sticky top-0 z-40 shadow-sm">
+        <div className="max-w-screen-2xl mx-auto flex flex-wrap justify-center items-center gap-x-6 gap-y-3 md:gap-16 px-4 py-4 md:py-5 text-[10px] md:text-xs uppercase tracking-[0.15em] text-[#4a6b52] font-bold">
+          <button onClick={scrollToGrid} className="hover:text-[#059669] transition-colors duration-300 text-center">{t.nav_forecasts}</button>
+          <button onClick={handleOpenNakshatra} className="hover:text-[#059669] transition-colors duration-300 text-center">{t.nav_nakshatra}</button>
+          <button onClick={handleOpenRetrogrades} className="hover:text-[#059669] transition-colors duration-300 text-center">{t.nav_retrograde}</button>
+          <a href="/articles" className="hover:text-[#059669] transition-colors duration-300 text-center">{t.nav_learn}</a>
+        </div>
+      </nav>
+
+      <section className="py-20 md:py-32 px-4 relative z-10 overflow-hidden bg-[#ecf4e3]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 md:mb-24">
+            <h2 className="text-3xl md:text-4xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wide uppercase">{t.why_title}</h2>
+            <div className="w-12 h-[2px] bg-[#059669]/50 mx-auto mt-6"></div>
+          </div>
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-8">
+            <div className="flex flex-col gap-10 md:gap-16 w-full lg:w-1/3 order-2 lg:order-1 px-4">
+              <div className="flex flex-col items-center lg:items-end text-center lg:text-right group">
+                <FlameIcon />
+                <h4 className="text-[#112a1a] font-['Cinzel',serif] font-bold mt-4 mb-2 text-xl md:text-2xl tracking-wide">{t.why_1_title}</h4>
+                <p className="text-[#2d4a35] text-sm md:text-base font-medium leading-relaxed">{t.why_1_desc}</p>
+              </div>
+              <div className="flex flex-col items-center lg:items-end text-center lg:text-right group">
+                <FlameIcon />
+                <h4 className="text-[#112a1a] font-['Cinzel',serif] font-bold mt-4 mb-2 text-xl md:text-2xl tracking-wide">{t.why_2_title}</h4>
+                <p className="text-[#2d4a35] text-sm md:text-base font-medium leading-relaxed">{t.why_2_desc}</p>
+              </div>
+            </div>
+
+            <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full p-2 border border-[#059669]/30 relative order-1 lg:order-2 flex-shrink-0 shadow-lg bg-white">
+              <div className="absolute inset-0 rounded-full border border-[#059669]/20 animate-[spin_10s_linear_infinite]" style={{ margin: '-10px' }}></div>
+              <img
+                src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=800&auto=format&fit=crop"
+                alt="Meditation & Focus"
+                className="w-full h-full object-cover rounded-full mix-blend-multiply opacity-80"
+              />
+              <div className="absolute inset-0 rounded-full shadow-[inset_0_0_50px_rgba(236,244,227,0.8)] pointer-events-none"></div>
+            </div>
+
+            <div className="flex flex-col gap-10 md:gap-16 w-full lg:w-1/3 order-3 px-4">
+              <div className="flex flex-col items-center lg:items-start text-center lg:text-left group">
+                <FlameIcon />
+                <h4 className="text-[#112a1a] font-['Cinzel',serif] font-bold mt-4 mb-2 text-xl md:text-2xl tracking-wide">{t.why_3_title}</h4>
+                <p className="text-[#2d4a35] text-sm md:text-base font-medium leading-relaxed">{t.why_3_desc}</p>
+              </div>
+              <div className="flex flex-col items-center lg:items-start text-center lg:text-left group">
+                <FlameIcon />
+                <h4 className="text-[#112a1a] font-['Cinzel',serif] font-bold mt-4 mb-2 text-xl md:text-2xl tracking-wide">{t.why_4_title}</h4>
+                <p className="text-[#2d4a35] text-sm md:text-base font-medium leading-relaxed">{t.why_4_desc}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 md:py-24 px-4 relative z-10 overflow-hidden bg-[#e4eed8] border-y border-[#d0e5c0]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] mb-3 font-bold">{t.planetarium_badge}</div>
+            <h2 className="text-2xl md:text-4xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wide uppercase">{t.planetarium_title}</h2>
+            <div className="w-12 h-[2px] bg-[#059669]/50 mx-auto mt-6"></div>
+            <p className="text-[#2d4a35] mt-6 text-sm md:text-base font-medium max-w-2xl mx-auto leading-relaxed">
+              {t.planetarium_desc}
+            </p>
+          </div>
+
+          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#d0e5c0] shadow-md group bg-white">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#ecf4e3] to-white pointer-events-none z-0"></div>
+
+            <StarField />
+
+            <div className="absolute top-4 left-4 md:top-6 md:left-6 flex items-center gap-2 z-20 pointer-events-none">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse"></div>
+              <div className="text-[8px] md:text-[10px] uppercase tracking-widest text-[#112a1a] font-bold">CORE ACTIVE</div>
+            </div>
+            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 text-[8px] md:text-[10px] text-[#4a6b52] tracking-widest font-mono pointer-events-none font-bold">
+              COORD: 55°42'29"N 58°57'23"E
+            </div>
+            <div className="absolute top-4 right-4 md:top-6 md:right-6 text-[8px] md:text-[10px] text-[#059669] tracking-widest font-mono pointer-events-none font-bold">
+              MIRA MAY ENGINE
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="navigation-grid" className="py-20 md:py-32 px-4 md:px-6 max-w-7xl mx-auto relative z-10 bg-[#ecf4e3]">
+        <div className="text-center mb-16 md:mb-24">
+            <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] mb-3 font-bold">{t.grid_subtitle}</div>
+            <h2 className="text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wide uppercase">{t.grid_title}</h2>
+            <div className="w-12 h-[2px] bg-[#059669]/50 mx-auto mt-6"></div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-10">
+
+          <div className="group bg-white p-8 md:p-10 rounded-[2rem] border border-[#d0e5c0] transition-all duration-500 hover:border-[#059669] hover:shadow-[0_15px_30px_rgba(5,150,105,0.1)] flex flex-col relative overflow-hidden">
+            <div className="mb-6 md:mb-8 text-[#059669] text-4xl font-light">☀</div>
+            <h3 className="text-2xl font-['Cinzel',serif] font-bold mb-4 text-[#112a1a] tracking-wide">{t.grid_1_title}</h3>
+            <p className="text-[#4a6b52] mb-8 leading-relaxed text-sm md:text-base font-medium flex-grow">{t.grid_1_desc}</p>
+            <button
+              onClick={() => handleOpenForecast('daily')}
+              className="w-full bg-[#ecf4e3] text-[#059669] border border-[#d0e5c0] py-3.5 rounded-xl group-hover:bg-[#059669] group-hover:text-white group-hover:border-[#059669] transition-all duration-300 text-xs uppercase tracking-wider font-bold"
+            >
+              {t.btn_1}
+            </button>
+          </div>
+
+          <div className="group bg-white p-8 md:p-10 rounded-[2rem] border border-[#d0e5c0] transition-all duration-500 hover:border-[#059669] hover:shadow-[0_15px_30px_rgba(5,150,105,0.1)] flex flex-col relative overflow-hidden">
+            <div className="mb-6 md:mb-8 text-[#059669] text-4xl font-light">☽</div>
+            <h3 className="text-2xl font-['Cinzel',serif] font-bold mb-4 text-[#112a1a] tracking-wide">{t.grid_2_title}</h3>
+            <p className="text-[#4a6b52] mb-8 leading-relaxed text-sm md:text-base font-medium flex-grow">{t.grid_2_desc}</p>
+            <button
+              onClick={() => handleOpenForecast('monthly')}
+              className="w-full bg-[#ecf4e3] text-[#059669] border border-[#d0e5c0] py-3.5 rounded-xl group-hover:bg-[#059669] group-hover:text-white group-hover:border-[#059669] transition-all duration-300 text-xs uppercase tracking-wider font-bold"
+            >
+              {t.btn_2}
+            </button>
+          </div>
+
+          <div className="group bg-white p-8 md:p-10 rounded-[2rem] border border-[#d0e5c0] transition-all duration-500 hover:border-[#059669] hover:shadow-[0_15px_30px_rgba(5,150,105,0.1)] flex flex-col relative overflow-hidden">
+            <div className="mb-6 md:mb-8 text-[#059669] text-4xl font-light">♃</div>
+            <h3 className="text-2xl font-['Cinzel',serif] font-bold mb-4 text-[#112a1a] tracking-wide">{t.grid_3_title}</h3>
+            <p className="text-[#4a6b52] mb-8 leading-relaxed text-sm md:text-base font-medium flex-grow">{t.grid_3_desc}</p>
+            <button
+              onClick={() => handleOpenForecast('yearly')}
+              className="w-full bg-[#ecf4e3] text-[#059669] border border-[#d0e5c0] py-3.5 rounded-xl group-hover:bg-[#059669] group-hover:text-white group-hover:border-[#059669] transition-all duration-300 text-xs uppercase tracking-wider font-bold"
+            >
+              {t.btn_3}
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <footer id="contacts" className="bg-[#e4eed8] border-t border-[#d0e5c0] pt-16 md:pt-24 pb-12 px-6 relative z-10 overflow-hidden">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-[#059669]/5 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-12 mb-16 md:mb-20">
+            <div className="md:col-span-2 space-y-6">
+              <div className="text-xl md:text-2xl font-['Cinzel',serif] font-bold tracking-[0.2em] text-[#112a1a] flex items-center gap-3">
+                <RoseLogo />
+                <span>MIRA <span className="text-[#059669]">MAY</span></span>
+              </div>
+              <p className="text-[#4a6b52] text-sm leading-relaxed max-w-sm font-medium">
+                {t.footer_desc}
+              </p>
+              <div className="flex gap-4 pt-2">
+                <a href="https://t.me/твой_канал" target="_blank" rel="noreferrer" className="w-12 h-12 rounded-xl bg-white border border-[#d0e5c0] flex items-center justify-center text-[#059669] hover:text-white hover:bg-[#059669] hover:border-[#059669] hover:shadow-md active:scale-95 transition-all duration-300">
+                  <Icons.Telegram />
+                </a>
+                <a href="https://instagram.com/твой_профиль" target="_blank" rel="noreferrer" className="w-12 h-12 rounded-xl bg-white border border-[#d0e5c0] flex items-center justify-center text-[#059669] hover:text-white hover:bg-[#059669] hover:border-[#059669] hover:shadow-md active:scale-95 transition-all duration-300">
+                  <Icons.Instagram />
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs uppercase tracking-[0.2em] text-[#112a1a] font-bold mb-6">{t.footer_nav_title}</h4>
+              <ul className="space-y-4 text-sm font-bold text-[#4a6b52]">
+                <li><button onClick={scrollToGrid} className="hover:text-[#059669] transition-colors duration-300">{t.nav_forecasts}</button></li>
+                <li><button onClick={handleOpenNakshatra} className="hover:text-[#059669] transition-colors duration-300">{t.nav_nakshatra}</button></li>
+                <li><button onClick={handleOpenRetrogrades} className="hover:text-[#059669] transition-colors duration-300">{t.nav_retrograde}</button></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xs uppercase tracking-[0.2em] text-[#112a1a] font-bold mb-6">{t.footer_access_title}</h4>
+              <ul className="space-y-4 text-sm font-bold text-[#4a6b52]">
+                <li>
+                  <a href="/admin" className="hover:text-[#059669] transition-colors duration-300 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse"></span>
+                    {t.footer_login}
+                  </a>
+                </li>
+                <li className="text-xs text-[#4a6b52]/70 font-medium">System v6.9.0 (Stable Layout)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-[#d0e5c0] pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-[#4a6b52] gap-4 font-bold">
+            <div>&copy; {new Date().getFullYear()} MIRA MAY. {t.footer_rights}</div>
+            <div className="tracking-[0.1em] uppercase text-[10px] text-center md:text-right">{t.footer_slogan}</div>
+          </div>
+        </div>
+      </footer>
+
+      {/* --- ГЛОБАЛЬНЫЙ КОНТЕЙНЕР МОДАЛЬНОГО ОКНА --- */}
+      {activeModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-[#112a1a]/40 backdrop-blur-md transition-all duration-300">
+
+          <div className="bg-white border border-[#d0e5c0] rounded-2xl md:rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col relative z-10 shadow-2xl animate-fade-in-up overflow-hidden">
+
+            {/* Фиксированная шапка модального окна */}
+            <div className="px-6 py-5 md:px-10 md:py-8 border-b border-[#d0e5c0] flex justify-between items-start bg-white z-20 shrink-0">
+              <div className="pr-4">
+                <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.2em] mb-2 font-bold">{t.modal_telemetry}</div>
+                <h3 className="text-2xl md:text-4xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wide">
+                  {activeModal.period_type === 'daily' ? t.grid_1_title :
+                   activeModal.period_type === 'monthly' ? t.grid_2_title :
+                   activeModal.period_type === 'yearly' ? t.grid_3_title :
+                   activeModal.period_type === 'retrograde' ? t.nav_retrograde :
+                   activeModal.period_type === 'nakshatra' ? t.nav_nakshatra : 'Прогноз'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="w-10 h-10 shrink-0 rounded-full bg-[#ecf4e3] border border-[#d0e5c0] flex items-center justify-center text-[#4a6b52] hover:bg-[#059669] hover:text-white hover:border-[#059669] active:scale-90 transition-all text-xl font-bold shadow-sm"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Прокручиваемый контент */}
+            <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar">
+              <div className="text-[#2d4a35] text-sm md:text-lg leading-relaxed md:leading-loose whitespace-pre-wrap font-medium">
+                {activeModal.content}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
