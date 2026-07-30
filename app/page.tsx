@@ -47,7 +47,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     planetarium_badge: "Собственная визуализация",
     planetarium_title: "Интерактивная сфера",
     planetarium_desc: "Генеративная модель звездного неба. Ядро рассчитывает положения частиц в реальном времени. Взаимодействуйте со сферой с помощью курсора.",
-    calendar_title: "Июль 2026",
+    calendar_title: "Календарь накшатр",
     calendar_time: "МСК (UTC+3)"
   },
   EN: {
@@ -92,7 +92,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     planetarium_badge: "Proprietary Visualization",
     planetarium_title: "Interactive Sphere",
     planetarium_desc: "Generative starfield model. The core calculates particle positions in real-time. Interact with the sphere using your cursor.",
-    calendar_title: "July 2026",
+    calendar_title: "Nakshatra Calendar",
     calendar_time: "MSK (UTC+3)"
   }
 };
@@ -102,6 +102,141 @@ const LANGUAGES = [
   { code: 'EN', name: 'English' }
 ];
 
+// --- ДИНАМИЧЕСКИЙ КОМПОНЕНТ КАЛЕНДАРЯ ---
+const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: any }) => {
+  const [date, setDate] = useState(new Date());
+  const [dbData, setDbData] = useState<Record<string, any>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const monthsRU = ['ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ', 'ИЮЛЬ', 'АВГУСТ', 'СЕНТЯБРЬ', 'ОКТЯБРЬ', 'НОЯБРЬ', 'ДЕКАБРЬ'];
+  const monthsEN = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+  const monthName = currentLang === 'RU' ? monthsRU[month] : monthsEN[month];
+  const daysOfWeek = currentLang === 'RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  useEffect(() => {
+    async function fetchMonth() {
+      setIsLoading(true);
+      const y = year;
+      const m = String(month + 1).padStart(2, '0');
+
+      const { data } = await supabase
+        .from('nakshatras')
+        .select('*')
+        .like('calendar_date', `${y}-${m}-%`);
+
+      const map: Record<string, any> = {};
+      if (data) {
+        data.forEach(item => {
+          const dKey = item.calendar_date.split('T')[0];
+          map[dKey] = item;
+        });
+      }
+      setDbData(map);
+      setIsLoading(false);
+    }
+    fetchMonth();
+  }, [year, month]);
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let firstDayOfWeek = new Date(year, month, 1).getDay();
+  const adjustedFirstDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+  const cells = [];
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  for (let i = 0; i < adjustedFirstDay; i++) {
+    cells.push({ isEmpty: true, day: prevMonthDays - adjustedFirstDay + i + 1 });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dStr = String(d).padStart(2, '0');
+    const mStr = String(month + 1).padStart(2, '0');
+    cells.push({ isEmpty: false, day: d, dateKey: `${year}-${mStr}-${dStr}` });
+  }
+  let nextMonthDay = 1;
+  while (cells.length % 7 !== 0) {
+    cells.push({ isEmpty: true, day: nextMonthDay++ });
+  }
+
+  return (
+    <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10">
+
+      <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative">
+        <h4 className="hidden md:block text-sm md:text-xl font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase opacity-0 select-none">SPACER</h4>
+
+        <div className="flex items-center justify-between md:justify-center gap-4 bg-white px-2 py-1.5 rounded-xl border border-[#d0e5c0] shadow-sm w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2">
+           <button onClick={() => setDate(new Date(year, month - 1, 1))} className="text-[#059669] hover:text-[#112a1a] p-2 px-4 font-bold transition-colors text-lg active:scale-95">&larr;</button>
+           <div className="flex flex-col items-center min-w-[120px]">
+             <h4 className="text-sm md:text-lg font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase select-none">
+               {monthName} {year}
+             </h4>
+             {isLoading && <span className="text-[9px] text-[#059669] animate-pulse uppercase font-bold tracking-widest absolute -bottom-4">Синхронизация...</span>}
+           </div>
+           <button onClick={() => setDate(new Date(year, month + 1, 1))} className="text-[#059669] hover:text-[#112a1a] p-2 px-4 font-bold transition-colors text-lg active:scale-95">&rarr;</button>
+        </div>
+
+        <div className="text-[10px] md:text-sm text-[#059669] uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-[#d0e5c0] font-bold">
+          {t.calendar_time}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 bg-[#e4eed8]">
+        {daysOfWeek.map((d, i) => (
+          <div key={d} className={`py-3 text-center text-[10px] md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
+            {d}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
+        {cells.map((cell, index) => {
+          const isRu = currentLang === 'RU';
+          let slot1 = '';
+          let slot2 = '';
+
+          if (!cell.isEmpty && cell.dateKey && dbData[cell.dateKey]) {
+            const row = dbData[cell.dateKey];
+            const times = (isRu ? row.nak_time_ru : row.nak_time_en)?.split('|') || [];
+            const texts = (isRu ? row.data_ru : row.data_en)?.split('|') || [];
+
+            const formatSlot = (text: string, time: string) => text ? `${text} \n${time ? `(с ${time})` : ''}`.trim() : '';
+            const formatSlotEN = (text: string, time: string) => text ? `${text} \n${time ? `(at ${time})` : ''}`.trim() : '';
+
+            slot1 = isRu ? formatSlot(texts[0], times[0]) : formatSlotEN(texts[0], times[0]);
+            slot2 = isRu ? formatSlot(texts[1], times[1]) : formatSlotEN(texts[1], times[1]);
+          }
+
+          return (
+            <div key={index} className={`min-h-[110px] md:min-h-[140px] p-1.5 md:p-3 border-b border-r border-[#d0e5c0] flex flex-col transition-colors ${!cell.isEmpty ? 'bg-white hover:bg-[#ecf4e3]' : 'bg-[#ecf4e3]/30 opacity-60'} ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
+              <div className={`text-right text-xs md:text-base font-bold mb-1 md:mb-2 ${!cell.isEmpty ? ((index % 7 > 4) ? 'text-[#059669]' : 'text-[#112a1a]') : 'text-[#4a6b52]'}`}>
+                {cell.day}
+              </div>
+
+              {!cell.isEmpty && (slot1 || slot2) && (
+                <div className="mt-auto flex flex-col gap-1.5 md:gap-2">
+                  {slot1 && (
+                    <div className="text-[9px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-1.5 md:p-2 rounded border border-[#d0e5c0]">
+                      {slot1}
+                    </div>
+                  )}
+                  {slot2 && (
+                    <div className="text-[9px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-1.5 md:p-2 rounded border border-[#059669]/30">
+                      {slot2}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
+// --- ВЕКТОРНАЯ ГРАФИКА И ИКОНКИ ---
 const RoseLogo = () => (
   <svg
     className="w-10 h-10 md:w-12 md:h-12 text-[#059669] transform hover:scale-105 transition-transform duration-500 drop-shadow-sm flex-shrink-0"
@@ -397,75 +532,11 @@ export default function Home() {
   };
 
   const handleOpenNakshatra = () => {
-    const isRU = currentLang === 'RU';
-    const daysOfWeek = isRU ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const activeNakshatrasData = isRU ? {
-      1: "Уттара Ашадха\n(с 4:21)", 2: "Шравана\n(с 6:58)", 3: "Дхаништха\n(с 9:16)", 4: "Сатабиша\n(с 11:13)",
-      5: "Пурва Бхадрапада (с 12:42)\nУттара Бхадрапада (с 14:17)", 6: "Пурва Бхадрапада (до 13:37)",
-      7: "Уттара Бхадрапада (до 13:54)", 8: "Ревати (до 13:30)",
-      9: "Ашвини (до 12:27)", 10: "Бхарани (до 10:46)",
-      11: "Рохини\n(с 8:35)", 12: "Мригашира\n(с 6:00)", 13: "Ардра\n(до 20:01)",
-      14: "Пунарвасу\n(до 12:45)", 15: "Пушья\n(с 9:22)", 16: "Ашлеша\n(до 17:23)",
-      17: "Магха\n(до 16:06)", 18: "Пурва Пхалгуни (до 15:31)",
-      19: "Хаста (с 15:43)", 20: "Хаста", 21: "Читра (весь день)",
-      22: "Свати", 23: "Вишакха", 24: "Анурадха\n(с 6:44)", 25: "Джиештха",
-      26: "Мула\n(с 5:05)", 27: "Пурва Ашадха (до 13:46)",
-      28: "Уттара Ашадха", 29: "Шравана", 30: "Шравана\n(весь день)", 31: "Дхаништха\n(до 16:58)"
-    } : {
-      1: "Uttara Ashadha\n(from 4:21)", 2: "Shravana\n(from 6:58)", 3: "Dhanishtha\n(from 9:16)", 4: "Shatabhisha\n(from 11:13)",
-      5: "Purva Bhadrapada (from 12:42)", 6: "Purva Bhadrapada (until 13:37)",
-      7: "Uttara Bhadrapada (until 13:54)", 8: "Revati (until 13:30)",
-      9: "Ashvini (until 12:27)", 10: "Bharani (until 10:46)",
-      11: "Rohini\n(from 8:35)", 12: "Mrigashira\n(from 6:00)", 13: "Ardra\n(until 20:01)",
-      14: "Punarvasu\n(until 12:45)", 15: "Pushya\n(from 9:22)", 16: "Ashlesha\n(until 17:23)",
-      17: "Magha\n(until 16:06)", 18: "Purva Phalguni (until 15:31)",
-      19: "Hasta (from 15:43)", 20: "Hasta", 21: "Chitra (all day)",
-      22: "Svati", 23: "Vishakha", 24: "Anuradha\n(from 6:44)", 25: "Jyeshtha",
-      26: "Mula\n(from 5:05)", 27: "Purva Ashadha (until 13:46)",
-      28: "Uttara Ashadha", 29: "Shravana", 30: "Shravana\n(all day)", 31: "Dhanishtha\n(until 16:58)"
-    };
-
-    const calendarCells = [];
-    calendarCells.push({ day: 29, isCurrentMonth: false, data: null });
-    calendarCells.push({ day: 30, isCurrentMonth: false, data: null });
-    for (let i = 1; i <= 31; i++) {
-      calendarCells.push({ day: i, isCurrentMonth: true, data: activeNakshatrasData[i as keyof typeof activeNakshatrasData] });
-    }
-    calendarCells.push({ day: 1, isCurrentMonth: false, data: null });
-    calendarCells.push({ day: 2, isCurrentMonth: false, data: null });
-
-    const calendarContent = (
-      <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10">
-        <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-5 flex justify-between items-center">
-          <h4 className="text-lg md:text-2xl font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase">{t.calendar_title}</h4>
-          <div className="text-[10px] md:text-sm text-[#059669] uppercase tracking-widest bg-white px-2 md:px-3 py-1.5 rounded border border-[#d0e5c0]">
-            {t.calendar_time}
-          </div>
-        </div>
-        <div className="grid grid-cols-7 bg-[#e4eed8]">
-          {daysOfWeek.map((d, i) => (
-            <div key={d} className={`py-3 text-center text-[10px] md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
-              {d}
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
-          {calendarCells.map((cell, index) => (
-            <div key={index} className={`min-h-[90px] md:min-h-[140px] p-1.5 md:p-3 border-b border-r border-[#d0e5c0] flex flex-col transition-colors ${cell.isCurrentMonth ? 'bg-white hover:bg-[#ecf4e3]' : 'bg-[#ecf4e3]/30 opacity-60'} ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
-              <div className={`text-right text-xs md:text-base font-bold mb-1 md:mb-2 ${cell.isCurrentMonth ? ((index % 7 > 4) ? 'text-[#059669]' : 'text-[#112a1a]') : 'text-[#4a6b52]'}`}>
-                {cell.day}
-              </div>
-              {cell.data && (
-                <div className="mt-auto text-[9px] md:text-xs leading-tight md:leading-snug text-[#2d4a35] font-medium whitespace-pre-wrap break-words">
-                  {cell.data}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-    setActiveModal({ period_type: 'nakshatra', content: calendarContent });
+    // ВЫЗОВ НАШЕГО НОВОГО ДИНАМИЧЕСКОГО КОМПОНЕНТА
+    setActiveModal({
+      period_type: 'nakshatra',
+      content: <DynamicNakshatraCalendar currentLang={currentLang} t={t} />
+    });
   };
 
   const scrollToGrid = () => {
@@ -767,7 +838,7 @@ export default function Home() {
                     {t.footer_login}
                   </a>
                 </li>
-                <li className="text-xs text-[#4a6b52]/70 font-medium">System v6.9.0 (Stable Layout)</li>
+                <li className="text-xs text-[#4a6b52]/70 font-medium">System v6.9.1 (Dynamic Dual Core)</li>
               </ul>
             </div>
           </div>
@@ -794,7 +865,7 @@ export default function Home() {
                    activeModal.period_type === 'monthly' ? t.grid_2_title :
                    activeModal.period_type === 'yearly' ? t.grid_3_title :
                    activeModal.period_type === 'retrograde' ? t.nav_retrograde :
-                   activeModal.period_type === 'nakshatra' ? t.nav_nakshatra : 'Прогноз'}
+                   activeModal.period_type === 'nakshatra' ? t.calendar_title : 'Прогноз'}
                 </h3>
               </div>
               <button
