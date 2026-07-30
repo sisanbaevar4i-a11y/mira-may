@@ -3,6 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 
+// --- ЭТАЛОННАЯ БАЗА НАКШАТР ---
+const NAKSHATRAS_RU = [
+  "", "Ашвини", "Бхарани", "Криттика", "Рохини", "Мригашира", "Ардра",
+  "Пунарвасу", "Пушья", "Ашлеша", "Магха", "Пурва Пхалгуни", "Уттара Пхалгуни",
+  "Хаста", "Читра", "Свати", "Вишакха", "Анурадха", "Джиештха", "Мула",
+  "Пурва Ашадха", "Уттара Ашадха", "Шравана", "Дхаништха", "Шатабхиша",
+  "Пурва Бхадрапада", "Уттара Бхадрапада", "Ревати"
+];
+
+const NAKSHATRAS_EN = [
+  "", "Ashvini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
+  "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
+  "Hasta", "Chitra", "Svati", "Vishakha", "Anuradha", "Jyeshtha", "Mula",
+  "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishtha", "Shatabhisha",
+  "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+];
+
 export default function AdminDashboard() {
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [retrogrades, setRetrogrades] = useState<any[]>([]);
@@ -48,9 +65,9 @@ export default function AdminDashboard() {
         const dateKey = item.calendar_date.split('T')[0];
         nakMap[dateKey] = {
           id: item.id,
-          time_ru: item.nak_time_ru || '', // Добавили поле времени
+          time_ru: item.nak_time_ru || '',
           text_ru: item.data_ru || '',
-          time_en: item.nak_time_en || '', // Добавили поле времени
+          time_en: item.nak_time_en || '',
           text_en: item.data_en || ''
         };
       });
@@ -239,7 +256,7 @@ export default function AdminDashboard() {
             <div>
               <div className="text-indigo-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-1 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Admin Terminal v4.9 (Mobile Adaptive)
+                Admin Terminal v5.0 (Selector Active)
               </div>
               <h1 className="text-2xl md:text-3xl font-['Cinzel',serif] font-bold text-white tracking-wide">Панель управления контентом</h1>
             </div>
@@ -370,7 +387,7 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* ВКЛАДКА 3: КАЛЕНДАРЬ НАКШАТР (МОБИЛЬНАЯ АДАПТАЦИЯ С СКРОЛЛОМ) */}
+            {/* ВКЛАДКА 3: КАЛЕНДАРЬ НАКШАТР */}
             {activeTab === 'nakshatra' && (
               <div className="bg-[#080a0f]/90 backdrop-blur-md border border-gray-800/80 rounded-3xl p-6 md:p-8 shadow-2xl">
 
@@ -439,16 +456,18 @@ export default function AdminDashboard() {
                                     type="time"
                                     value={currentData.time_ru}
                                     onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru', e.target.value)}
-                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none"
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer"
                                   />
-                                  {/* ВВОД НАЗВАНИЯ */}
-                                  <input
-                                    type="text"
+                                  {/* ВЫБОР НАКШАТРЫ (СЕЛЕКТОР) */}
+                                  <select
                                     value={currentData.text_ru}
                                     onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru', e.target.value)}
-                                    placeholder="Накшатра"
-                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none placeholder:text-gray-600 font-light"
-                                  />
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
+                                  >
+                                    {NAKSHATRAS_RU.map(nak => (
+                                      <option key={nak} value={nak}>{nak || '— Не выбрано —'}</option>
+                                    ))}
+                                  </select>
                                 </div>
                               </div>
 
@@ -456,8 +475,23 @@ export default function AdminDashboard() {
                               <div>
                                 <label className="block text-[10px] text-purple-400 uppercase tracking-widest mb-1.5 font-semibold">EN (change at)</label>
                                 <div className="flex flex-col gap-1.5">
-                                  <input type="time" value={currentData.time_en} onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en', e.target.value)} className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none" />
-                                  <input type="text" value={currentData.text_en} onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en', e.target.value)} placeholder="Nakshatra" className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none placeholder:text-gray-600 font-light" />
+                                  {/* ВВОД ВРЕМЕНИ */}
+                                  <input
+                                    type="time"
+                                    value={currentData.time_en}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en', e.target.value)}
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer"
+                                  />
+                                  {/* ВЫБОР НАКШАТРЫ (СЕЛЕКТОР) */}
+                                  <select
+                                    value={currentData.text_en}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en', e.target.value)}
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
+                                  >
+                                    {NAKSHATRAS_EN.map(nak => (
+                                      <option key={nak} value={nak}>{nak || '— Select —'}</option>
+                                    ))}
+                                  </select>
                                 </div>
                               </div>
                             </div>
