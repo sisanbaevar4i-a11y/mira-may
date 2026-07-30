@@ -20,17 +20,25 @@ const NAKSHATRAS_EN = [
   "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
 ];
 
+type NakshatraDay = {
+  id?: string;
+  time_ru_1: string; text_ru_1: string;
+  time_ru_2: string; text_ru_2: string;
+  time_en_1: string; text_en_1: string;
+  time_en_2: string; text_en_2: string;
+};
+
 export default function AdminDashboard() {
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [retrogrades, setRetrogrades] = useState<any[]>([]);
 
-  // Ключ для словаря календаря теперь будет "YYYY-MM-DD"
-  const [nakshatrasMap, setNakshatrasMap] = useState<Record<string, { id?: string, time_ru: string, text_ru: string, time_en: string, text_en: string }>>({});
+  // Двухслотовый словарь накшатр
+  const [nakshatrasMap, setNakshatrasMap] = useState<Record<string, NakshatraDay>>({});
 
   // Состояние для выбора даты (динамический календарь)
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-11
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,12 +46,11 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('interface');
 
   const monthsRU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-  // Генерация списка годов (от текущего -5 до +5)
   const yearsRange = Array.from({length: 11}, (_, i) => today.getFullYear() - 5 + i);
 
   useEffect(() => {
     fetchData();
-  }, [currentYear, currentMonth]); // Перезагружать данные при смене месяца/года
+  }, [currentYear, currentMonth]);
 
   async function fetchData() {
     setIsLoading(true);
@@ -57,23 +64,26 @@ export default function AdminDashboard() {
     if (resContent.data) setContentItems(resContent.data);
     if (resRetro.data) setRetrogrades(resRetro.data);
 
-    // Превращаем массив календаря в удобный словарь по датам "YYYY-MM-DD"
-    const nakMap: Record<string, any> = {};
+    const nakMap: Record<string, NakshatraDay> = {};
     if (resNak.data) {
       resNak.data.forEach((item: any) => {
-        // Обрезаем таймзону до формата YYYY-MM-DD
         const dateKey = item.calendar_date.split('T')[0];
+        // Разделяем сохраненные данные по символу "|"
+        const t_ru = (item.nak_time_ru || '').split('|');
+        const txt_ru = (item.data_ru || '').split('|');
+        const t_en = (item.nak_time_en || '').split('|');
+        const txt_en = (item.data_en || '').split('|');
+
         nakMap[dateKey] = {
           id: item.id,
-          time_ru: item.nak_time_ru || '',
-          text_ru: item.data_ru || '',
-          time_en: item.nak_time_en || '',
-          text_en: item.data_en || ''
+          time_ru_1: t_ru[0] || '', text_ru_1: txt_ru[0] || '',
+          time_ru_2: t_ru[1] || '', text_ru_2: txt_ru[1] || '',
+          time_en_1: t_en[0] || '', text_en_1: txt_en[0] || '',
+          time_en_2: t_en[1] || '', text_en_2: txt_en[1] || ''
         };
       });
     }
     setNakshatrasMap(nakMap);
-
     setIsLoading(false);
   }
 
@@ -86,34 +96,44 @@ export default function AdminDashboard() {
     setRetrogrades(items => items.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
-  // Интеллектуальный обработчик сетки календаря (Авто-синхронизация)
-  const handleNakshatraGridChange = (dateStr: string, field: 'time_ru' | 'text_ru' | 'time_en' | 'text_en', value: string) => {
+  // Интеллектуальный двухслотовый обработчик сетки календаря
+  const handleNakshatraGridChange = (dateStr: string, field: keyof NakshatraDay, value: string) => {
     setNakshatrasMap(prev => {
-      const prevData = prev[dateStr] || { time_ru: '', text_ru: '', time_en: '', text_en: '' };
+      const prevData = prev[dateStr] || {
+        time_ru_1: '', text_ru_1: '', time_ru_2: '', text_ru_2: '',
+        time_en_1: '', text_en_1: '', time_en_2: '', text_en_2: ''
+      };
       const updates: any = { [field]: value };
 
-      // Синхронизация названий накшатр по индексу
-      if (field === 'text_ru') {
+      // Авто-перевод Слот 1
+      if (field === 'text_ru_1') {
         const idx = NAKSHATRAS_RU.indexOf(value);
-        if (idx !== -1) updates.text_en = NAKSHATRAS_EN[idx];
-      } else if (field === 'text_en') {
+        if (idx !== -1) updates.text_en_1 = NAKSHATRAS_EN[idx];
+      } else if (field === 'text_en_1') {
         const idx = NAKSHATRAS_EN.indexOf(value);
-        if (idx !== -1) updates.text_ru = NAKSHATRAS_RU[idx];
+        if (idx !== -1) updates.text_ru_1 = NAKSHATRAS_RU[idx];
       }
 
-      // Зеркалирование времени
-      if (field === 'time_ru') {
-        updates.time_en = value;
-      } else if (field === 'time_en') {
-        updates.time_ru = value;
+      // Авто-перевод Слот 2
+      else if (field === 'text_ru_2') {
+        const idx = NAKSHATRAS_RU.indexOf(value);
+        if (idx !== -1) updates.text_en_2 = NAKSHATRAS_EN[idx];
+      } else if (field === 'text_en_2') {
+        const idx = NAKSHATRAS_EN.indexOf(value);
+        if (idx !== -1) updates.text_ru_2 = NAKSHATRAS_RU[idx];
       }
+
+      // Зеркалирование времени Слот 1
+      if (field === 'time_ru_1') updates.time_en_1 = value;
+      else if (field === 'time_en_1') updates.time_ru_1 = value;
+
+      // Зеркалирование времени Слот 2
+      else if (field === 'time_ru_2') updates.time_en_2 = value;
+      else if (field === 'time_en_2') updates.time_ru_2 = value;
 
       return {
         ...prev,
-        [dateStr]: {
-          ...prevData,
-          ...updates
-        }
+        [dateStr]: { ...prevData, ...updates }
       };
     });
   };
@@ -168,7 +188,6 @@ export default function AdminDashboard() {
         }
       }
       else if (activeTab === 'nakshatra') {
-        // Сохраняем ТОЛЬКО дни текущего выбранного месяца из сетки
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         const monthFormatted = (currentMonth + 1) < 10 ? `0${currentMonth + 1}` : `${currentMonth + 1}`;
 
@@ -177,28 +196,23 @@ export default function AdminDashboard() {
           const dateStr = `${currentYear}-${monthFormatted}-${dayFormatted}`;
           const cellData = nakshatrasMap[dateStr];
 
-          // Пропускаем, если данных вообще нет для этой даты
-          if (!cellData || (!cellData.text_ru && !cellData.text_en && !cellData.time_ru && !cellData.time_en)) continue;
+          // Пропускаем полностью пустые ячейки
+          if (!cellData || (!cellData.text_ru_1 && !cellData.text_ru_2 && !cellData.time_ru_1 && !cellData.time_ru_2 && !cellData.text_en_1 && !cellData.text_en_2)) continue;
 
-          // Подготовка данных для Supabase (с новыми полями времени)
+          // Подготовка данных: склеиваем слоты через пайп "|"
           const dbData = {
             calendar_date: dateStr,
-            nak_time_ru: cellData.time_ru, // ВРЕМЯ RU
-            data_ru: cellData.text_ru,     // ТЕКСТ RU
-            nak_time_en: cellData.time_en, // ВРЕМЯ EN
-            data_en: cellData.text_en      // ТЕКСТ EN
+            nak_time_ru: `${cellData.time_ru_1 || ''}|${cellData.time_ru_2 || ''}`,
+            data_ru: `${cellData.text_ru_1 || ''}|${cellData.text_ru_2 || ''}`,
+            nak_time_en: `${cellData.time_en_1 || ''}|${cellData.time_en_2 || ''}`,
+            data_en: `${cellData.text_en_1 || ''}|${cellData.text_en_2 || ''}`
           };
 
           if (cellData.id) {
-            // Обновляем существующую запись
-            const { error } = await supabase.from('nakshatras')
-              .update(dbData)
-              .eq('id', cellData.id);
+            const { error } = await supabase.from('nakshatras').update(dbData).eq('id', cellData.id);
             if (error) hasError = true;
           } else {
-            // Создаем новую запись для этой даты
-            const { error } = await supabase.from('nakshatras')
-              .insert([dbData]);
+            const { error } = await supabase.from('nakshatras').insert([dbData]);
             if (error) hasError = true;
           }
         }
@@ -213,7 +227,7 @@ export default function AdminDashboard() {
       setSaveStatus('Ошибка синхронизации. Проверьте консоль.');
     } else {
       setSaveStatus('Изменения успешно применены в базе данных.');
-      fetchData(); // Перезагружаем, чтобы получить ID для новых записей
+      fetchData();
       setTimeout(() => setSaveStatus(null), 3500);
     }
   };
@@ -223,29 +237,19 @@ export default function AdminDashboard() {
     return acc;
   }, {});
 
-  // --- ЛОГИКА ГЕНЕРАЦИИ СЕТКИ ДИНАМИЧЕСКОГО КАЛЕНДАРЯ ---
   const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
   const generateCalendarDays = (year: number, month: number) => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    // JS getDay(): Вс=0, Пн=1, Вт=2 ... Сб=6.
-    // Превращаем в: Пн=0, Вт=1 ... Вс=6
     let firstDayOfWeek = new Date(year, month, 1).getDay();
     const adjustedFirstDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
-
     const calendarGrid = [];
-
-    // 1. Пустые ячейки в начале месяца (предыдущий месяц)
     for (let i = 0; i < adjustedFirstDay; i++) {
       calendarGrid.push({ isEmpty: true, dayNum: null });
     }
-
-    // 2. Реальные дни месяца
     for (let d = 1; d <= daysInMonth; d++) {
       calendarGrid.push({ isEmpty: false, dayNum: d });
     }
-
     return calendarGrid;
   };
 
@@ -260,8 +264,6 @@ export default function AdminDashboard() {
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(10, 12, 16, 0.5); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
-
-        /* Стили для Chrome/Safari для input[type="time"] */
         input[type="time"]::-webkit-calendar-picker-indicator {
           filter: invert(1) brightness(0.7) sepia(100%) hue-rotate(200deg) saturate(3);
           cursor: pointer;
@@ -269,20 +271,17 @@ export default function AdminDashboard() {
       `}} />
 
       <div className="max-w-7xl mx-auto p-4 md:p-10">
-
-        {/* ХЕДЕР ТЕРМИНАЛА */}
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#080a0f]/85 backdrop-blur-xl border border-gray-800/80 p-6 md:p-8 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)]">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-['Cinzel',serif] text-xl font-bold shadow-[0_0_15px_rgba(99,102,241,0.2)]">⚙</div>
             <div>
               <div className="text-indigo-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-1 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Admin Terminal v5.1 (Auto-Sync Module)
+                Admin Terminal v5.2 (Dual Slot Core)
               </div>
               <h1 className="text-2xl md:text-3xl font-['Cinzel',serif] font-bold text-white tracking-wide">Панель управления контентом</h1>
             </div>
           </div>
-
           <div className="flex items-center gap-4 w-full md:w-auto">
             <button onClick={() => window.open('/', '_blank')} className="flex-1 md:flex-initial px-5 py-3 rounded-xl bg-[#0c0e14] border border-gray-700/80 hover:border-indigo-500/50 hover:text-white transition-all text-xs font-semibold tracking-wider uppercase text-gray-400">Сайт ↗</button>
             <button onClick={handleSave} disabled={isSaving} className="flex-1 md:flex-initial px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all text-white text-xs font-semibold tracking-wider uppercase disabled:opacity-50 shadow-[0_0_20px_rgba(99,102,241,0.4)]">
@@ -298,7 +297,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* НАВИГАЦИОННЫЕ ВКЛАДКИ */}
         <div className="flex gap-3 mb-8 border-b border-gray-800/60 pb-4 overflow-x-auto custom-scrollbar">
           {['interface', 'retrograde', 'nakshatra'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`py-3 px-6 rounded-xl whitespace-nowrap font-medium text-xs tracking-widest uppercase transition-all duration-300 ${activeTab === tab ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] font-bold' : 'bg-[#080a0f] text-gray-400 hover:text-white border border-gray-800/80'}`}>
@@ -408,18 +406,16 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* ВКЛАДКА 3: КАЛЕНДАРЬ НАКШАТР */}
+            {/* ВКЛАДКА 3: ДВУХСЛОТОВЫЙ КАЛЕНДАРЬ НАКШАТР */}
             {activeTab === 'nakshatra' && (
               <div className="bg-[#080a0f]/90 backdrop-blur-md border border-gray-800/80 rounded-3xl p-6 md:p-8 shadow-2xl">
 
-                {/* ПАНЕЛЬ ВЫБОРА ДАТЫ */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-gray-800/60 pb-8">
                   <div>
                     <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif]">База: Календарь накшатр</h2>
-                    <p className="text-xs text-gray-400 mt-1 font-light">Выберите период и заполните время смены накшатр (UTC+3).</p>
+                    <p className="text-xs text-gray-400 mt-1 font-light">Выберите период и заполните слоты времени и смены накшатр (UTC+3).</p>
                   </div>
 
-                  {/* Контролы выбора месяца/года */}
                   <div className="flex items-center gap-3 bg-[#030407] border border-gray-800 rounded-xl p-2 shadow-inner w-full md:w-auto justify-between md:justify-start">
                     <button onClick={() => setCurrentMonth(prev => prev === 0 ? 11 : prev - 1)} className="p-2 text-indigo-400 hover:text-white">&larr;</button>
 
@@ -436,85 +432,125 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* ОБЕРТКА С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ ДЛЯ ТЕЛЕФОНОВ */}
                 <div className="overflow-x-auto w-full custom-scrollbar pb-4">
-                  <div className="min-w-[1100px]">
+                  <div className="min-w-[1250px]">
 
-                    {/* Дни недели */}
-                    <div className="grid grid-cols-7 gap-2 mb-2">
+                    <div className="grid grid-cols-7 gap-3 mb-3">
                       {daysOfWeek.map((d, index) => (
                         <div key={d} className={`py-3 text-center text-xs font-bold uppercase tracking-wider rounded-xl bg-gray-900/50 border border-gray-800/80 ${index > 4 ? 'text-pink-400' : 'text-gray-300'}`}>{d}</div>
                       ))}
                     </div>
 
-                    {/* Сетка дней месяца */}
-                    <div className="grid grid-cols-7 gap-2">
+                    <div className="grid grid-cols-7 gap-3">
                       {calendarDaysGrid.map((cell, idx) => {
                         if (cell.isEmpty) {
-                          return <div key={'empty-' + idx} className="min-h-[180px] bg-[#030407]/40 border border-gray-900/40 rounded-2xl opacity-20"></div>;
+                          return <div key={'empty-' + idx} className="min-h-[220px] bg-[#030407]/40 border border-gray-900/40 rounded-2xl opacity-20"></div>;
                         }
 
                         const dayStr = cell.dayNum! < 10 ? `0${cell.dayNum}` : `${cell.dayNum}`;
                         const monthFormatted = (currentMonth + 1) < 10 ? `0${currentMonth + 1}` : `${currentMonth + 1}`;
                         const dateKey = `${currentYear}-${monthFormatted}-${dayStr}`;
 
-                        const currentData = nakshatrasMap[dateKey] || { time_ru: '', text_ru: '', time_en: '', text_en: '' };
+                        const currentData = nakshatrasMap[dateKey] || {
+                          time_ru_1: '', text_ru_1: '', time_ru_2: '', text_ru_2: '',
+                          time_en_1: '', text_en_1: '', time_en_2: '', text_en_2: ''
+                        };
                         const isWeekend = (idx % 7 === 5 || idx % 7 === 6);
 
                         return (
-                          <div key={dateKey} className={`min-h-[220px] bg-[#030407] border rounded-2xl p-4 flex flex-col transition-all hover:border-indigo-500/50 shadow-lg ${isWeekend ? 'border-pink-900/30' : 'border-gray-800/80'}`}>
-                            <div className={`text-right text-sm font-bold mb-3 ${isWeekend ? 'text-pink-400' : 'text-gray-300'}`}>
+                          <div key={dateKey} className={`min-h-[280px] bg-[#030407] border rounded-2xl p-4 flex flex-col transition-all hover:border-indigo-500/50 shadow-lg ${isWeekend ? 'border-pink-900/30' : 'border-gray-800/80'}`}>
+                            <div className={`text-right text-sm font-bold mb-4 ${isWeekend ? 'text-pink-400' : 'text-gray-300'}`}>
                               {cell.dayNum} {monthsRU[currentMonth].substring(0, 3)}
                             </div>
 
-                            <div className="space-y-4 flex-grow">
+                            <div className="space-y-5 flex-grow">
+
                               {/* RU БЛОК */}
-                              <div className="border-b border-gray-800/40 pb-3">
-                                <label className="block text-[10px] text-indigo-400 uppercase tracking-widest mb-1.5 font-semibold">RU (смена в)</label>
-                                <div className="flex flex-col gap-1.5">
-                                  {/* ВВОД ВРЕМЕНИ */}
-                                  <input
-                                    type="time"
-                                    value={currentData.time_ru}
-                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru', e.target.value)}
-                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer"
-                                  />
-                                  {/* ВЫБОР НАКШАТРЫ (СЕЛЕКТОР) */}
-                                  <select
-                                    value={currentData.text_ru}
-                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru', e.target.value)}
-                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
-                                  >
-                                    {NAKSHATRAS_RU.map(nak => (
-                                      <option key={nak} value={nak}>{nak || '— Не выбрано —'}</option>
-                                    ))}
-                                  </select>
+                              <div className="border-b border-gray-800/40 pb-4">
+                                <label className="block text-[10px] text-indigo-400 uppercase tracking-widest mb-2 font-semibold">RU (накшатры)</label>
+                                <div className="flex flex-col gap-2">
+                                  {/* СЛОТ 1 */}
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="time"
+                                      value={currentData.time_ru_1}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru_1', e.target.value)}
+                                      className="w-20 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center"
+                                    />
+                                    <select
+                                      value={currentData.text_ru_1}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru_1', e.target.value)}
+                                      className="flex-1 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
+                                    >
+                                      {NAKSHATRAS_RU.map(nak => (
+                                        <option key={nak} value={nak}>{nak || '— 1 —'}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  {/* СЛОТ 2 */}
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="time"
+                                      value={currentData.time_ru_2}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru_2', e.target.value)}
+                                      className="w-20 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center"
+                                    />
+                                    <select
+                                      value={currentData.text_ru_2}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru_2', e.target.value)}
+                                      className="flex-1 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
+                                    >
+                                      {NAKSHATRAS_RU.map(nak => (
+                                        <option key={nak} value={nak}>{nak || '— 2 —'}</option>
+                                      ))}
+                                    </select>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* EN БЛОК */}
                               <div>
-                                <label className="block text-[10px] text-purple-400 uppercase tracking-widest mb-1.5 font-semibold">EN (change at)</label>
-                                <div className="flex flex-col gap-1.5">
-                                  {/* ВВОД ВРЕМЕНИ */}
-                                  <input
-                                    type="time"
-                                    value={currentData.time_en}
-                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en', e.target.value)}
-                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer"
-                                  />
-                                  {/* ВЫБОР НАКШАТРЫ (СЕЛЕКТОР) */}
-                                  <select
-                                    value={currentData.text_en}
-                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en', e.target.value)}
-                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
-                                  >
-                                    {NAKSHATRAS_EN.map(nak => (
-                                      <option key={nak} value={nak}>{nak || '— Select —'}</option>
-                                    ))}
-                                  </select>
+                                <label className="block text-[10px] text-purple-400 uppercase tracking-widest mb-2 font-semibold">EN (Nakshatras)</label>
+                                <div className="flex flex-col gap-2">
+                                  {/* СЛОТ 1 */}
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="time"
+                                      value={currentData.time_en_1}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en_1', e.target.value)}
+                                      className="w-20 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center"
+                                    />
+                                    <select
+                                      value={currentData.text_en_1}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en_1', e.target.value)}
+                                      className="flex-1 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
+                                    >
+                                      {NAKSHATRAS_EN.map(nak => (
+                                        <option key={nak} value={nak}>{nak || '— 1 —'}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  {/* СЛОТ 2 */}
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="time"
+                                      value={currentData.time_en_2}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en_2', e.target.value)}
+                                      className="w-20 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center"
+                                    />
+                                    <select
+                                      value={currentData.text_en_2}
+                                      onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en_2', e.target.value)}
+                                      className="flex-1 bg-[#080a0f] border border-gray-800/80 rounded-lg p-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none font-light cursor-pointer"
+                                    >
+                                      {NAKSHATRAS_EN.map(nak => (
+                                        <option key={nak} value={nak}>{nak || '— 2 —'}</option>
+                                      ))}
+                                    </select>
+                                  </div>
                                 </div>
                               </div>
+
                             </div>
                           </div>
                         );
