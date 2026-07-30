@@ -233,13 +233,13 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto p-4 md:p-10">
 
         {/* ХЕДЕР ТЕРМИНАЛА */}
-        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#080a0f]/80 backdrop-blur-xl border border-gray-800/80 p-6 md:p-8 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)]">
+        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#080a0f]/85 backdrop-blur-xl border border-gray-800/80 p-6 md:p-8 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)]">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-['Cinzel',serif] text-xl font-bold shadow-[0_0_15px_rgba(99,102,241,0.2)]">⚙</div>
             <div>
               <div className="text-indigo-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-1 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Admin Terminal v4.9 (Time Core Integrated)
+                Admin Terminal v4.9 (Mobile Adaptive)
               </div>
               <h1 className="text-2xl md:text-3xl font-['Cinzel',serif] font-bold text-white tracking-wide">Панель управления контентом</h1>
             </div>
@@ -274,11 +274,103 @@ export default function AdminDashboard() {
         ) : (
           <div className="animate-fade-in">
 
-            {/* ВКЛАДКА 1: ИНТЕРФЕЙС и ВКЛАДКА 2: РЕТРОГРАДЫ (код без изменений) */}
-            {activeTab === 'interface' && ( <div className="space-y-8"> {Object.entries(groupedContent).map(([section, items]: [string, any]) => ( <div key={section} className="bg-[#080a0f]/90 backdrop-blur-md border border-gray-800/80 rounded-3xl overflow-hidden shadow-2xl"> <div className="bg-gradient-to-r from-indigo-950/40 to-transparent px-8 py-5 border-b border-gray-800/60 flex items-center justify-between"> <h2 className="text-sm font-bold text-white uppercase tracking-[0.2em] font-['Cinzel',serif]">{section}</h2> <span className="text-[10px] text-indigo-400 font-mono">Модулей: {items.length}</span> </div> <div className="divide-y divide-gray-800/40"> {items.map((item: any) => ( <div key={item.id} className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 hover:bg-white/[0.01] transition-colors"> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 flex justify-between font-semibold"> <span>Русский (RU)</span> <span className="text-indigo-400/70 font-mono text-[9px] bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-900/50">{item.key_name}</span> </label> <textarea value={item.value_ru} onChange={(e) => handleContentChange(item.id, 'value_ru', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none transition-all min-h-[90px] shadow-inner font-light" /> </div> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">English (EN)</label> <textarea value={item.value_en} onChange={(e) => handleContentChange(item.id, 'value_en', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none transition-all min-h-[90px] shadow-inner font-light" /> </div> </div> ))} </div> </div> ))} </div> )}
-            {activeTab === 'retrograde' && ( <div className="space-y-6"> <div className="flex justify-between items-center mb-6 bg-[#080a0f] border border-gray-800/80 p-6 rounded-2xl"> <div> <h2 className="text-lg font-bold text-white uppercase tracking-widest font-['Cinzel',serif]">Управление орбитами</h2> <p className="text-xs text-gray-400 mt-1 font-light">Настройка транзитов и периодов ретроградности</p> </div> <button onClick={addRetrograde} className="px-5 py-3 bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 rounded-xl hover:bg-indigo-600 hover:text-white transition-all text-xs uppercase tracking-wider font-semibold shadow-[0_0_15px_rgba(99,102,241,0.2)]"> + Добавить транзит </button> </div> {retrogrades.length === 0 && <div className="text-center py-16 text-gray-500 italic">База ретроградов пуста.</div>} <div className="grid grid-cols-1 gap-6"> {retrogrades.map((item, index) => ( <div key={item.id} className="bg-[#080a0f]/90 backdrop-blur-md border border-gray-800/80 rounded-2xl p-6 md:p-8 relative group hover:border-gray-700 transition-all shadow-xl"> <div className="absolute top-6 right-6 flex items-center gap-6"> <div className="text-xs text-gray-400 flex items-center gap-2"> <span>Порядок:</span> <input type="number" value={item.sort_order} onChange={e => handleRetroChange(item.id, 'sort_order', parseInt(e.target.value))} className="w-12 bg-[#030407] border border-gray-700 rounded-lg text-white text-center py-1 focus:border-indigo-500 focus:outline-none" /> </div> <button onClick={() => deleteRetrograde(item.id)} className="text-red-400/80 hover:text-red-400 text-xs uppercase tracking-wider font-semibold bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors"> Удалить </button> </div> <div className="flex items-center gap-3 mb-6 pr-48"> <span className="text-3xl text-indigo-400 w-10 text-center">{item.planet_icon || '✧'}</span> <h3 className="text-base text-white font-semibold font-['Cinzel',serif]">Транзит #{index + 1}</h3> </div> <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Символ (Emoji)</label> <input value={item.planet_icon} onChange={e => handleRetroChange(item.id, 'planet_icon', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" /> </div> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Планета (RU)</label> <input value={item.planet_name_ru} onChange={e => handleRetroChange(item.id, 'planet_name_ru', e.target.value)} placeholder="Юпитер" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" /> </div> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Planet (EN)</label> <input value={item.planet_name_en} onChange={e => handleRetroChange(item.id, 'planet_name_en', e.target.value)} placeholder="Jupiter" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" /> </div> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Период дат (RU)</label> <input value={item.period_ru} onChange={e => handleRetroChange(item.id, 'period_ru', e.target.value)} placeholder="11.11.2025 — 11.03.2026" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" /> </div> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Period dates (EN)</label> <input value={item.period_en} onChange={e => handleRetroChange(item.id, 'period_en', e.target.value)} placeholder="11.11.2025 — 11.03.2026" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" /> </div> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Транзит согласно Джйотиш (RU)</label> <textarea value={item.transit_ru} onChange={e => handleRetroChange(item.id, 'transit_ru', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[70px]" /> </div> <div> <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Transit according to Jyotish (EN)</label> <textarea value={item.transit_en} onChange={e => handleRetroChange(item.id, 'transit_en', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[70px]" /> </div> </div> </div> ))} </div> </div> )}
+            {/* ВКЛАДКА 1: ИНТЕРФЕЙС */}
+            {activeTab === 'interface' && (
+              <div className="space-y-8">
+                {Object.entries(groupedContent).map(([section, items]: [string, any]) => (
+                  <div key={section} className="bg-[#080a0f]/90 backdrop-blur-md border border-gray-800/80 rounded-3xl overflow-hidden shadow-2xl">
+                    <div className="bg-gradient-to-r from-indigo-950/40 to-transparent px-8 py-5 border-b border-gray-800/60 flex items-center justify-between">
+                      <h2 className="text-sm font-bold text-white uppercase tracking-[0.2em] font-['Cinzel',serif]">{section}</h2>
+                      <span className="text-[10px] text-indigo-400 font-mono">Модулей: {items.length}</span>
+                    </div>
+                    <div className="divide-y divide-gray-800/40">
+                      {items.map((item: any) => (
+                        <div key={item.id} className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 hover:bg-white/[0.01] transition-colors">
+                          <div>
+                            <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 flex justify-between font-semibold">
+                              <span>Русский (RU)</span>
+                              <span className="text-indigo-400/70 font-mono text-[9px] bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-900/50">{item.key_name}</span>
+                            </label>
+                            <textarea value={item.value_ru} onChange={(e) => handleContentChange(item.id, 'value_ru', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none transition-all min-h-[90px] shadow-inner font-light" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">English (EN)</label>
+                            <textarea value={item.value_en} onChange={(e) => handleContentChange(item.id, 'value_en', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none transition-all min-h-[90px] shadow-inner font-light" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* ВКЛАДКА 3: ДИНАМИЧЕСКИЙ КАЛЕНДАРЬ НАКШАТР С ВРЕМЕНЕМ */}
+            {/* ВКЛАДКА 2: РЕТРОГРАДЫ */}
+            {activeTab === 'retrograde' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6 bg-[#080a0f] border border-gray-800/80 p-6 rounded-2xl">
+                  <div>
+                    <h2 className="text-lg font-bold text-white uppercase tracking-widest font-['Cinzel',serif]">Управление орбитами</h2>
+                    <p className="text-xs text-gray-400 mt-1 font-light">Настройка транзитов и периодов ретроградности</p>
+                  </div>
+                  <button onClick={addRetrograde} className="px-5 py-3 bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 rounded-xl hover:bg-indigo-600 hover:text-white transition-all text-xs uppercase tracking-wider font-semibold shadow-[0_0_15px_rgba(99,102,241,0.2)]"> + Добавить транзит </button>
+                </div>
+                {retrogrades.length === 0 && <div className="text-center py-16 text-gray-500 italic">База ретроградов пуста.</div>}
+                <div className="grid grid-cols-1 gap-6">
+                  {retrogrades.map((item, index) => (
+                    <div key={item.id} className="bg-[#080a0f]/90 backdrop-blur-md border border-gray-800/80 rounded-2xl p-6 md:p-8 relative group hover:border-gray-700 transition-all shadow-xl">
+                      <div className="absolute top-6 right-6 flex items-center gap-6">
+                        <div className="text-xs text-gray-400 flex items-center gap-2">
+                          <span>Порядок:</span>
+                          <input type="number" value={item.sort_order} onChange={e => handleRetroChange(item.id, 'sort_order', parseInt(e.target.value))} className="w-12 bg-[#030407] border border-gray-700 rounded-lg text-white text-center py-1 focus:border-indigo-500 focus:outline-none" />
+                        </div>
+                        <button onClick={() => deleteRetrograde(item.id)} className="text-red-400/80 hover:text-red-400 text-xs uppercase tracking-wider font-semibold bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors"> Удалить </button>
+                      </div>
+                      <div className="flex items-center gap-3 mb-6 pr-48">
+                        <span className="text-3xl text-indigo-400 w-10 text-center">{item.planet_icon || '✧'}</span>
+                        <h3 className="text-base text-white font-semibold font-['Cinzel',serif]">Транзит #{index + 1}</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Символ (Emoji)</label>
+                          <input value={item.planet_icon} onChange={e => handleRetroChange(item.id, 'planet_icon', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Планета (RU)</label>
+                          <input value={item.planet_name_ru} onChange={e => handleRetroChange(item.id, 'planet_name_ru', e.target.value)} placeholder="Юпитер" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Planet (EN)</label>
+                          <input value={item.planet_name_en} onChange={e => handleRetroChange(item.id, 'planet_name_en', e.target.value)} placeholder="Jupiter" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Период дат (RU)</label>
+                          <input value={item.period_ru} onChange={e => handleRetroChange(item.id, 'period_ru', e.target.value)} placeholder="11.11.2025 — 11.03.2026" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Period dates (EN)</label>
+                          <input value={item.period_en} onChange={e => handleRetroChange(item.id, 'period_en', e.target.value)} placeholder="11.11.2025 — 11.03.2026" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Транзит согласно Джйотиш (RU)</label>
+                          <textarea value={item.transit_ru} onChange={e => handleRetroChange(item.id, 'transit_ru', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[70px]" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-semibold">Transit according to Jyotish (EN)</label>
+                          <textarea value={item.transit_en} onChange={e => handleRetroChange(item.id, 'transit_en', e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[70px]" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ВКЛАДКА 3: КАЛЕНДАРЬ НАКШАТР (МОБИЛЬНАЯ АДАПТАЦИЯ С СКРОЛЛОМ) */}
             {activeTab === 'nakshatra' && (
               <div className="bg-[#080a0f]/90 backdrop-blur-md border border-gray-800/80 rounded-3xl p-6 md:p-8 shadow-2xl">
 
@@ -306,68 +398,75 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Дни недели */}
-                <div className="grid grid-cols-7 gap-2 mb-2">
-                  {daysOfWeek.map((d, index) => (
-                    <div key={d} className={`py-3 text-center text-xs font-bold uppercase tracking-wider rounded-xl bg-gray-900/50 border border-gray-800/80 ${index > 4 ? 'text-pink-400' : 'text-gray-300'}`}>{d}</div>
-                  ))}
-                </div>
+                {/* ОБЕРТКА С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ ДЛЯ ТЕЛЕФОНОВ */}
+                <div className="overflow-x-auto w-full custom-scrollbar pb-4">
+                  <div className="min-w-[1100px]">
 
-                {/* Сетка дней месяца */}
-                <div className="grid grid-cols-7 gap-2">
-                  {calendarDaysGrid.map((cell, idx) => {
-                    if (cell.isEmpty) {
-                      return <div key={'empty-' + idx} className="min-h-[180px] bg-[#030407]/40 border border-gray-900/40 rounded-2xl opacity-20"></div>;
-                    }
+                    {/* Дни недели */}
+                    <div className="grid grid-cols-7 gap-2 mb-2">
+                      {daysOfWeek.map((d, index) => (
+                        <div key={d} className={`py-3 text-center text-xs font-bold uppercase tracking-wider rounded-xl bg-gray-900/50 border border-gray-800/80 ${index > 4 ? 'text-pink-400' : 'text-gray-300'}`}>{d}</div>
+                      ))}
+                    </div>
 
-                    const dayStr = cell.dayNum! < 10 ? `0${cell.dayNum}` : `${cell.dayNum}`;
-                    const monthFormatted = (currentMonth + 1) < 10 ? `0${currentMonth + 1}` : `${currentMonth + 1}`;
-                    const dateKey = `${currentYear}-${monthFormatted}-${dayStr}`;
+                    {/* Сетка дней месяца */}
+                    <div className="grid grid-cols-7 gap-2">
+                      {calendarDaysGrid.map((cell, idx) => {
+                        if (cell.isEmpty) {
+                          return <div key={'empty-' + idx} className="min-h-[180px] bg-[#030407]/40 border border-gray-900/40 rounded-2xl opacity-20"></div>;
+                        }
 
-                    const currentData = nakshatrasMap[dateKey] || { time_ru: '', text_ru: '', time_en: '', text_en: '' };
-                    const isWeekend = (idx % 7 === 5 || idx % 7 === 6);
+                        const dayStr = cell.dayNum! < 10 ? `0${cell.dayNum}` : `${cell.dayNum}`;
+                        const monthFormatted = (currentMonth + 1) < 10 ? `0${currentMonth + 1}` : `${currentMonth + 1}`;
+                        const dateKey = `${currentYear}-${monthFormatted}-${dayStr}`;
 
-                    return (
-                      <div key={dateKey} className={`min-h-[220px] bg-[#030407] border rounded-2xl p-4 flex flex-col transition-all hover:border-indigo-500/50 shadow-lg ${isWeekend ? 'border-pink-900/30' : 'border-gray-800/80'}`}>
-                        <div className={`text-right text-sm font-bold mb-3 ${isWeekend ? 'text-pink-400' : 'text-gray-300'}`}>
-                          {cell.dayNum} {monthsRU[currentMonth].substring(0, 3)}
-                        </div>
+                        const currentData = nakshatrasMap[dateKey] || { time_ru: '', text_ru: '', time_en: '', text_en: '' };
+                        const isWeekend = (idx % 7 === 5 || idx % 7 === 6);
 
-                        <div className="space-y-4 flex-grow">
-                          {/* RU БЛОК */}
-                          <div className="border-b border-gray-800/40 pb-3">
-                            <label className="block text-[10px] text-indigo-400 uppercase tracking-widest mb-1.5 font-semibold">RU (смена в)</label>
-                            <div className="flex flex-col gap-1.5">
-                              {/* ВВОД ВРЕМЕНИ */}
-                              <input
-                                type="time"
-                                value={currentData.time_ru}
-                                onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru', e.target.value)}
-                                className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none"
-                              />
-                              {/* ВВОД НАЗВАНИЯ */}
-                              <input
-                                type="text"
-                                value={currentData.text_ru}
-                                onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru', e.target.value)}
-                                placeholder="Накшатра"
-                                className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none placeholder:text-gray-600 font-light"
-                              />
+                        return (
+                          <div key={dateKey} className={`min-h-[220px] bg-[#030407] border rounded-2xl p-4 flex flex-col transition-all hover:border-indigo-500/50 shadow-lg ${isWeekend ? 'border-pink-900/30' : 'border-gray-800/80'}`}>
+                            <div className={`text-right text-sm font-bold mb-3 ${isWeekend ? 'text-pink-400' : 'text-gray-300'}`}>
+                              {cell.dayNum} {monthsRU[currentMonth].substring(0, 3)}
+                            </div>
+
+                            <div className="space-y-4 flex-grow">
+                              {/* RU БЛОК */}
+                              <div className="border-b border-gray-800/40 pb-3">
+                                <label className="block text-[10px] text-indigo-400 uppercase tracking-widest mb-1.5 font-semibold">RU (смена в)</label>
+                                <div className="flex flex-col gap-1.5">
+                                  {/* ВВОД ВРЕМЕНИ */}
+                                  <input
+                                    type="time"
+                                    value={currentData.time_ru}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru', e.target.value)}
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none"
+                                  />
+                                  {/* ВВОД НАЗВАНИЯ */}
+                                  <input
+                                    type="text"
+                                    value={currentData.text_ru}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru', e.target.value)}
+                                    placeholder="Накшатра"
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none placeholder:text-gray-600 font-light"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* EN БЛОК */}
+                              <div>
+                                <label className="block text-[10px] text-purple-400 uppercase tracking-widest mb-1.5 font-semibold">EN (change at)</label>
+                                <div className="flex flex-col gap-1.5">
+                                  <input type="time" value={currentData.time_en} onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en', e.target.value)} className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none" />
+                                  <input type="text" value={currentData.text_en} onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en', e.target.value)} placeholder="Nakshatra" className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none placeholder:text-gray-600 font-light" />
+                                </div>
+                              </div>
                             </div>
                           </div>
+                        );
+                      })}
+                    </div>
 
-                          {/* EN БЛОК */}
-                          <div>
-                            <label className="block text-[10px] text-purple-400 uppercase tracking-widest mb-1.5 font-semibold">EN (change at)</label>
-                            <div className="flex flex-col gap-1.5">
-                              <input type="time" value={currentData.time_en} onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en', e.target.value)} className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none" />
-                              <input type="text" value={currentData.text_en} onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en', e.target.value)} placeholder="Nakshatra" className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2 text-xs text-white focus:border-indigo-500 focus:outline-none placeholder:text-gray-600 font-light" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  </div>
                 </div>
 
               </div>
