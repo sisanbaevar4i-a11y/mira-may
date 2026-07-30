@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Прямое подключение к Supabase (хардкод ключей) для сборки в облаке
-const supabaseUrl = 'https://altxwdoizxfyjotibgfp.supabase.co'; // ТВОЙ УНИКАЛЬНЫЙ URL
-const supabaseAnonKey = 'sb_publishable_8OFa9XuiKzqnP2_saaAuzA_I3Ib3oxF'; // Сюда вставь твой длинный anon key
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uqznrjvponrpwccsfzpo.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_oVW9ZWCXnv4YN8oqaIj1bQ_OZqf3QIA';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
