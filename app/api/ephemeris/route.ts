@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as astronomy from 'astronomy-engine';
 
-// === ЖЕСТКОЕ ОТКЛЮЧЕНИЕ КЭША VERCEL ===
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -17,38 +16,24 @@ const PLANETS = [
 
 const SIGNS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
 
-// --- БЛОКИРОВКА ОТРИЦАТЕЛЬНЫХ ЗНАЧЕНИЙ ---
 function mod360(val: number): number {
   let res = val % 360.0;
   if (res < 0) res += 360.0;
   return res;
 }
 
-// --- БЕЗОПАСНЫЙ И ТОЧНЫЙ РАСЧЕТ ДОЛГОТЫ ЧЕРЕЗ МАТРИЦЫ ---
-function getTropicalLongitude(bodyId: string, time: astronomy.AstroTime): number {
-  // 1. Получаем надежный геоцентрический вектор J2000 (никогда не вызывает 500 ошибку)
-  const vecEQJ = astronomy.GeoVector(bodyId, time, true);
+// Прямой расчет Сидерической долготы Лахири без искажений матриц
+function getSiderealLongitude(bodyId: string, time: astronomy.AstroTime): number {
+  const vec = astronomy.GeoVector(bodyId, time, true);
+  const epsJ2000 = 23.43929111 * (Math.PI / 180.0);
 
-  // 2. Генерируем матрицу вращения от Экватора J2000 к Истинной Эклиптике текущей даты
-  const rot = astronomy.Rotation_EQJ_ECT(time);
+  const x = vec.x;
+  const y = vec.y * Math.cos(epsJ2000) + vec.z * Math.sin(epsJ2000);
 
-  // 3. Поворачиваем вектор
-  const vecECT = astronomy.RotateVector(rot, vecEQJ);
+  let lonJ2000 = Math.atan2(y, x) * (180.0 / Math.PI);
 
-  // 4. Вычисляем идеальную эклиптическую долготу
-  const lon = Math.atan2(vecECT.y, vecECT.x) * (180.0 / Math.PI);
-  return mod360(lon);
-}
-
-// --- ТОЧНАЯ АЙАНАМША ЛАХИРИ ---
-function getTrueLahiriAyanamsa(t: number): number {
-  const meanAyanamsa = 23.8530555 + (1.396972222 * t) + (0.0003086 * t * t);
-  const omega = mod360(125.04452 - 1934.136261 * t);
-  const L = mod360(280.4665 + 36000.7698 * t);
-
-  // Нутация оси
-  const nutation = -0.004778 * Math.sin(omega * Math.PI/180) - 0.00034 * Math.sin(2 * L * Math.PI/180);
-  return meanAyanamsa + nutation;
+  // Вычитаем базовую константу Айанамши Лахири (23.8530555°)
+  return mod360(lonJ2000 - 23.8530555);
 }
 
 function formatZodiac(longitude: number) {
@@ -67,21 +52,15 @@ export async function GET() {
   try {
     const date = new Date();
     const timeNow = new astronomy.AstroTime(date);
-    const futureDate = new Date(date.getTime() + 3600000); // Вектор будущего на 1 час
+    const futureDate = new Date(date.getTime() + 3600000);
     const timeFuture = new astronomy.AstroTime(futureDate);
-
-    const t = (timeNow.tt - 2451545.0) / 36525.0; // Столетия от J2000
-    const trueAyanamsa = getTrueLahiriAyanamsa(t);
 
     const results = [];
 
-    // --- ОБРАБОТКА ПЛАНЕТ ---
+    // 1. Расчет основных 7 планет
     for (const p of PLANETS) {
-      const tropNow = getTropicalLongitude(p.id, timeNow);
-      const tropFuture = getTropicalLongitude(p.id, timeFuture);
-
-      const vedicLonNow = mod360(tropNow - trueAyanamsa);
-      const vedicLonFuture = mod360(tropFuture - trueAyanamsa);
+      const vedicLonNow = getSiderealLongitude(p.id, timeNow);
+      const vedicLonFuture = getSiderealLongitude(p.id, timeFuture);
 
       let diff = vedicLonFuture - vedicLonNow;
       if (diff < -180) diff += 360;
@@ -101,15 +80,22 @@ export async function GET() {
       });
     }
 
-    // --- УЗЛЫ (ИСТИННЫЕ РАХУ И КЕТУ) ---
-    const meanOmega = mod360(125.04452 - 1934.136261 * t + 0.0020708 * t * t);
-    const L = mod360(280.4665 + 36000.7698 * t);
+    // 2. Расчет Истинных Узлов (Раху и Кету)
+    const T = (timeNow.tt - 2451545.0) / 36525.0;
 
-    // Точная гравитационная поправка для Истинного Узла (как в Astro.Expert)
-    const trueRahuTrop = mod360(meanOmega - 1.4979 * Math.sin(2 * (meanOmega - L) * (Math.PI / 180.0)));
+    // Тропическая долгота узла
+    const meanOmega = mod360(125.044522 - 1934.136261 * T + 0.0020708 * T * T);
+    const sunLonTrop = mod360(getSiderealLongitude("Sun", timeNow) + 23.8530555 + (1.39697 * T));
 
-    const rahuVedic = mod360(trueRahuTrop - trueAyanamsa);
-    const ketuVedic = mod360(rahuVedic + 180);
+    // Гравитационная поправка Astro.Expert
+    const trueRahuTrop = mod360(meanOmega - 1.4979 * Math.sin(2 * (meanOmega - sunLonTrop) * (Math.PI / 180.0)));
+
+    // Сидерический перевод
+    const ayanamsaNow = 23.8530555 + (1.39697 * T);
+    const rahuVedic = mod360(trueRahuTrop - ayanamsaNow);
+
+    // КЕТУ СТРОГО В ОППОЗИЦИИ (+180°)
+    const ketuVedic = mod360(rahuVedic + 180.0);
 
     const rahuFormatted = formatZodiac(rahuVedic);
     const ketuFormatted = formatZodiac(ketuVedic);
