@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { AstroTime, GeoVector } from 'astronomy-engine';
+import { AstroTime, EclipticLongitude } from 'astronomy-engine';
 
-// Кэшируем результат на сервере на 30 минут (1800 секунд)
 export const revalidate = 1800;
 
 const PLANETS = [
@@ -16,32 +15,21 @@ const PLANETS = [
 
 const SIGNS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
 
-// --- ФУНДАМЕНТАЛЬНЫЕ КОНСТАНТЫ ЭПОХИ J2000 ---
-// Айанамша Лахири на 1 января 2000 года (23° 51' 11")
-const AYANAMSHA_J2000 = 23.8530555;
-// Точный наклон эклиптики на эпоху J2000
-const EPS_J2000 = 23.4392794444 * (Math.PI / 180.0);
+// --- ТОЧНАЯ АЙАНАМША ЛАХИРИ (Chitrapaksha) ---
+function getTrueLahiriAyanamsa(t: number): number {
+  // t - Юлианские столетия от J2000
+  const meanAyanamsa = 23.8530555 + (1.396972222 * t) + (0.0003086 * t * t);
 
-// --- ИДЕАЛЬНЫЙ РАСЧЕТ СИДЕРИЧЕСКОЙ ДОЛГОТЫ ---
-function getSiderealLongitude(bodyId: string, time: AstroTime): number {
-  // 1. Получаем геоцентрический вектор на J2000 (с учетом аберрации света)
-  const vec = GeoVector(bodyId, time, true);
+  // Астрономическая нутация (колебание оси), которую учитывает Astro.Expert
+  const omega = (125.04452 - 1934.136261 * t) % 360;
+  const L = (280.4665 + 36000.7698 * t) % 360;
+  const rad = Math.PI / 180.0;
 
-  const x = vec.x;
-  // 2. Вращаем экваториальную плоскость до эклиптики J2000
-  const y = vec.y * Math.cos(EPS_J2000) + vec.z * Math.sin(EPS_J2000);
+  const nutation = -0.004778 * Math.sin(omega * rad) - 0.00034 * Math.sin(2 * L * rad);
 
-  let lonJ2000 = Math.atan2(y, x) * (180.0 / Math.PI);
-  if (lonJ2000 < 0) lonJ2000 += 360;
-
-  // 3. Вычитаем константу Лахири. Это жестко привязывает зодиак к звездам.
-  let sidereal = lonJ2000 - AYANAMSHA_J2000;
-  if (sidereal < 0) sidereal += 360;
-
-  return sidereal;
+  return meanAyanamsa + nutation;
 }
 
-// --- ФОРМАТИРОВАНИЕ В ЗНАК И ГРАДУСЫ ---
 function formatZodiac(longitude: number) {
   const normalizedLon = ((longitude % 360) + 360) % 360;
   const signIndex = Math.floor(normalizedLon / 30);
@@ -58,17 +46,24 @@ export async function GET() {
   try {
     const date = new Date();
     const timeNow = new AstroTime(date);
-
-    // Вектор будущего для вычисления ретроградности
     const futureDate = new Date(date.getTime() + 3600000);
     const timeFuture = new AstroTime(futureDate);
+
+    // Столетия от J2000
+    const t = (timeNow.tt - 2451545.0) / 36525.0;
+    const trueAyanamsa = getTrueLahiriAyanamsa(t);
 
     const results = [];
 
     // --- ОБРАБОТКА ОСНОВНЫХ 7 ПЛАНЕТ ---
     for (const p of PLANETS) {
-      const vedicLonNow = getSiderealLongitude(p.id, timeNow);
-      const vedicLonFuture = getSiderealLongitude(p.id, timeFuture);
+      // EclipticLongitude выдает безупречную Тропическую долготу текущей даты
+      const tropNow = EclipticLongitude(p.id, timeNow);
+      const tropFuture = EclipticLongitude(p.id, timeFuture);
+
+      // Перевод в Сидерический зодиак (строго как в Astro.Expert)
+      const vedicLonNow = (tropNow - trueAyanamsa + 360) % 360;
+      const vedicLonFuture = (tropFuture - trueAyanamsa + 360) % 360;
 
       let diff = vedicLonFuture - vedicLonNow;
       if (diff < -180) diff += 360;
@@ -88,14 +83,15 @@ export async function GET() {
       });
     }
 
-    // --- РАСЧЕТ РАХУ И КЕТУ (Истинные средние узлы) ---
-    const t = (timeNow.tt - 2451545.0) / 36525.0; // Юлианские столетия от J2000
+    // --- РАСЧЕТ ИСТИННЫХ УЗЛОВ РАХУ И КЕТУ (True Node) ---
+    const meanOmega = (125.04452 - 1934.136261 * t + 0.0020708 * t * t) % 360;
+    const L = (280.4665 + 36000.7698 * t) % 360; // Солнце
+    const rad = Math.PI / 180.0;
 
-    // Точная формула средней долготы узла
-    let omega = 125.044522 - 1934.136261 * t + 0.0020708 * t * t + (t * t * t) / 450000;
-    omega = (omega % 360 + 360) % 360;
+    // Гравитационная поправка Истинного узла (решает проблему расхождения на ~1.5 градуса)
+    const trueRahuTrop = meanOmega - 1.4979 * Math.sin(2 * (L - meanOmega) * rad);
 
-    const rahuVedic = (omega - AYANAMSHA_J2000 + 360) % 360;
+    const rahuVedic = (trueRahuTrop - trueAyanamsa + 360) % 360;
     const ketuVedic = (rahuVedic + 180) % 360;
 
     const rahuFormatted = formatZodiac(rahuVedic);
