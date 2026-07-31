@@ -116,13 +116,12 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
   const monthName = currentLang === 'RU' ? monthsRU[month] : monthsEN[month];
   const daysOfWeek = currentLang === 'RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-useEffect(() => {
+  useEffect(() => {
     async function fetchMonth() {
       setIsLoading(true);
       const y = year;
       const m = String(month + 1).padStart(2, '0');
 
-      // Вычисляем последний день текущего месяца для создания точного диапазона
       const lastDay = new Date(y, month + 1, 0).getDate();
       const startDate = `${y}-${m}-01`;
       const endDate = `${y}-${m}-${lastDay}`;
@@ -133,7 +132,6 @@ useEffect(() => {
         .gte('calendar_date', startDate)
         .lte('calendar_date', endDate);
 
-      // Включаем жесткий мониторинг ошибок в консоли браузера
       if (error) {
         console.error("Системный сбой при запросе матриц накшатр:", error);
       }
@@ -248,6 +246,8 @@ useEffect(() => {
 
 
 // --- ВЕКТОРНАЯ ГРАФИКА И ИКОНКИ ---
+
+// НОВЫЙ ЛОГОТИП ИЗУМРУДНОГО СЕРДЦА
 const HeartLogo = () => (
   <svg
     className="w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0"
@@ -448,7 +448,6 @@ export default function Home() {
 
     async function fetchEphemeris() {
       try {
-        // Жесткая блокировка кэширования для этого запроса
         const res = await fetch('/api/ephemeris', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
@@ -544,7 +543,6 @@ export default function Home() {
   };
 
   const handleOpenNakshatra = () => {
-    // ВЫЗОВ НАШЕГО НОВОГО ДИНАМИЧЕСКОГО КОМПОНЕНТА
     setActiveModal({
       period_type: 'nakshatra',
       content: <DynamicNakshatraCalendar currentLang={currentLang} t={t} />
@@ -586,7 +584,7 @@ export default function Home() {
         <div className="max-w-screen-2xl mx-auto flex justify-between items-center py-3 px-4 md:px-8">
 
           <div className="text-lg md:text-2xl font-['Cinzel',serif] font-bold tracking-[0.2em] md:tracking-[0.3em] text-[#112a1a] flex items-center gap-3">
-            <RoseLogo />
+            <HeartLogo />
             <span><span className="text-[#059669]">MIRA</span> MAY</span>
           </div>
 
@@ -816,7 +814,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-12 mb-16 md:mb-20">
             <div className="md:col-span-2 space-y-6">
               <div className="text-xl md:text-2xl font-['Cinzel',serif] font-bold tracking-[0.2em] text-[#112a1a] flex items-center gap-3">
-                <RoseLogo />
+                <HeartLogo />
                 <span><span className="text-[#059669]">MIRA</span> MAY</span>
               </div>
               <p className="text-[#4a6b52] text-sm leading-relaxed max-w-sm font-medium">
@@ -868,7 +866,6 @@ export default function Home() {
 
           <div className="bg-white border border-[#d0e5c0] rounded-2xl md:rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col relative z-10 shadow-2xl animate-fade-in-up overflow-hidden">
 
-            {/* Фиксированная шапка модального окна */}
             <div className="px-6 py-5 md:px-10 md:py-8 border-b border-[#d0e5c0] flex justify-between items-start bg-white z-20 shrink-0">
               <div className="pr-4">
                 <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.2em] mb-2 font-bold">{t.modal_telemetry}</div>
@@ -888,7 +885,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Прокручиваемый контент */}
             <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar">
               <div className="text-[#2d4a35] text-sm md:text-lg leading-relaxed md:leading-loose whitespace-pre-wrap font-medium">
                 {activeModal.content}
