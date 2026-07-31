@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // --- ЛИНГВИСТИЧЕСКОЕ ЯДРО ---
 const DICTIONARY: Record<string, Record<string, any>> = {
@@ -269,7 +269,6 @@ const LANGUAGES = [
   { code: 'EN', name: 'English' }
 ];
 
-// НОВЫЙ ЛОГОТИП ИЗУМРУДНОГО СЕРДЦА
 const HeartLogo = () => (
   <svg
     className="w-7 h-7 sm:w-9 sm:h-9 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0"
@@ -304,6 +303,24 @@ const GlobeIcon = () => (
 export default function ArticlesPage() {
   const [currentLang, setCurrentLang] = useState('RU');
   const [isLangOpen, setIsLangOpen] = useState(false);
+
+  // ИНИЦИАЛИЗАЦИЯ ГЛОБАЛЬНОЙ ПАМЯТИ
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('mira_lang');
+      if (savedLang) {
+        setCurrentLang(savedLang);
+      }
+    }
+  }, []);
+
+  const handleLangChange = (code: string) => {
+    setCurrentLang(code);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mira_lang', code);
+    }
+    setIsLangOpen(false);
+  };
 
   const t = DICTIONARY[currentLang];
   const articleData = t.article;
@@ -365,7 +382,7 @@ export default function ArticlesPage() {
                 {LANGUAGES.map(lang => (
                   <button
                     key={lang.code}
-                    onClick={() => { setCurrentLang(lang.code); setIsLangOpen(false); }}
+                    onClick={() => handleLangChange(lang.code)}
                     className={`w-full text-left px-5 py-2.5 text-sm transition-all duration-200 ${
                       currentLang === lang.code
                         ? 'text-[#059669] bg-[#ecf4e3] font-bold'

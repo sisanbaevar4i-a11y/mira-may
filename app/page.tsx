@@ -170,7 +170,6 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
 
   return (
     <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10">
-
       <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative">
         <h4 className="hidden md:block text-sm md:text-xl font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase opacity-0 select-none">SPACER</h4>
 
@@ -246,8 +245,6 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
 
 
 // --- ВЕКТОРНАЯ ГРАФИКА И ИКОНКИ ---
-
-// НОВЫЙ ЛОГОТИП ИЗУМРУДНОГО СЕРДЦА
 const HeartLogo = () => (
   <svg
     className="w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0"
@@ -256,18 +253,13 @@ const HeartLogo = () => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <g stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeLinejoin="round">
-      {/* Центральная площадка */}
       <polygon points="50,38 35,28 25,45 50,70 75,45 65,28" fill="#059669" />
-
-      {/* Левые грани (Тень) */}
       <polygon points="50,25 38,12 35,28 50,38" fill="#047857" />
       <polygon points="38,12 25,10 35,28" fill="#064e3b" />
       <polygon points="25,10 12,18 25,45 35,28" fill="#065f46" />
       <polygon points="12,18 5,35 25,45" fill="#022c22" />
       <polygon points="5,35 15,60 50,70 25,45" fill="#0f766e" />
       <polygon points="15,60 50,95 50,70" fill="#022c22" />
-
-      {/* Правые грани (Световые блики) */}
       <polygon points="50,25 62,12 65,28 50,38" fill="#047857" />
       <polygon points="62,12 75,10 65,28" fill="#10b981" />
       <polygon points="75,10 88,18 75,45 65,28" fill="#6ee7b7" />
@@ -434,6 +426,24 @@ export default function Home() {
   const [isEphLoading, setIsEphLoading] = useState(true);
 
   const t = DICTIONARY[currentLang];
+
+  // ИНИЦИАЛИЗАЦИЯ ГЛОБАЛЬНОЙ ПАМЯТИ
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('mira_lang');
+      if (savedLang) {
+        setCurrentLang(savedLang);
+      }
+    }
+  }, []);
+
+  const handleLangChange = (code: string) => {
+    setCurrentLang(code);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mira_lang', code);
+    }
+    setIsLangOpen(false);
+  };
 
   useEffect(() => {
     async function fetchForecasts() {
@@ -608,7 +618,7 @@ export default function Home() {
                 {LANGUAGES.map(lang => (
                   <button
                     key={lang.code}
-                    onClick={() => { setCurrentLang(lang.code); setIsLangOpen(false); }}
+                    onClick={() => handleLangChange(lang.code)}
                     className={`w-full text-left px-5 py-2.5 text-sm transition-all duration-200 ${
                       currentLang === lang.code
                         ? 'text-[#059669] bg-[#ecf4e3] font-bold'
