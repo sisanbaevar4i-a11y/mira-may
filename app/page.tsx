@@ -621,25 +621,28 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- ОБНОВЛЕННЫЙ БЛОК ГЛАВНОЙ ШАПКИ С СЕВЕРНЫМ СИЯНИЕМ --- */}
-      <div className="relative w-full py-16 md:py-24 flex flex-col items-center justify-center overflow-hidden text-center px-4 bg-[#0a1f14]">
+      {/* --- ОБНОВЛЕННЫЙ БЛОК ГЛАВНОЙ ШАПКИ --- */}
+      <div className="relative w-full py-16 md:py-24 flex flex-col items-center justify-center overflow-hidden text-center px-4 bg-[#ecf4e3]">
 
-        {/* Адаптивный фильтр для вашей картинки hero-bg.jpg */}
+        {/* Картинка без агрессивных фильтров, чтобы сохранить красоту сияния */}
         <img
           src="/hero-bg.jpg"
           alt="Aurora Header"
-          className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen filter hue-rotate-[-30deg] saturate-50 brightness-110"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-[#ecf4e3]/80 via-[#ecf4e3]/90 to-[#ecf4e3]" />
+        {/* Умный градиент: прозрачный сверху для видимости сияния, плотный снизу для бесшовного перехода */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#ecf4e3]/30 via-[#ecf4e3]/80 to-[#ecf4e3]" />
 
         <div className="relative z-10 max-w-5xl mx-auto">
-          <div className="inline-block px-4 py-1.5 mb-5 md:mb-6 rounded-full border border-[#059669]/30 bg-[#059669]/10 text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] font-bold shadow-sm backdrop-blur-sm">
+          {/* Добавлен легкий backdrop-blur для плашек, чтобы текст идеально читался даже на ярких звездах */}
+          <div className="inline-block px-4 py-1.5 mb-5 md:mb-6 rounded-full border border-[#059669]/40 bg-[#ecf4e3]/80 text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] font-bold shadow-sm backdrop-blur-md">
             {t.hero_badge}
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2">
+          {/* Добавлена белая тень тексту для контраста с космосом */}
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2 drop-shadow-[0_0_15px_rgba(236,244,227,0.8)]">
             {t.hero_title_1} <br className="hidden md:block"/>
-            <span className="text-[#059669]">{t.hero_title_vector}</span> {t.hero_title_2}
+            <span className="text-[#059669] drop-shadow-none">{t.hero_title_vector}</span> {t.hero_title_2}
           </h1>
         </div>
       </div>
