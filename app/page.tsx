@@ -622,27 +622,28 @@ export default function Home() {
       </div>
 
       {/* --- ОБНОВЛЕННЫЙ БЛОК ГЛАВНОЙ ШАПКИ --- */}
-      <div className="relative w-full py-16 md:py-24 flex flex-col items-center justify-center overflow-hidden text-center px-4 bg-[#ecf4e3]">
+      <div className="relative w-full py-16 md:py-32 flex flex-col items-center justify-center overflow-hidden text-center px-4 bg-[#0a1f14]">
 
-        {/* Картинка без агрессивных фильтров, чтобы сохранить красоту сияния */}
+        {/* Картинка на 100% непрозрачности, кристально чистая */}
         <img
           src="/hero-bg.jpg"
           alt="Aurora Header"
-          className="absolute inset-0 w-full h-full object-cover opacity-60"
+          className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Умный градиент: прозрачный сверху для видимости сияния, плотный снизу для бесшовного перехода */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#ecf4e3]/30 via-[#ecf4e3]/80 to-[#ecf4e3]" />
+        {/* Плавный переход ТОЛЬКО в самом низу, чтобы склеить блок со светлой бегущей строкой */}
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#ecf4e3] to-transparent" />
+
+        {/* Локальное свечение строго за текстом. Картинка по краям остается 100% чистой */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-[80%] bg-[#ecf4e3]/80 blur-[100px] rounded-[100%] pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto">
-          {/* Добавлен легкий backdrop-blur для плашек, чтобы текст идеально читался даже на ярких звездах */}
-          <div className="inline-block px-4 py-1.5 mb-5 md:mb-6 rounded-full border border-[#059669]/40 bg-[#ecf4e3]/80 text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] font-bold shadow-sm backdrop-blur-md">
+          <div className="inline-block px-4 py-1.5 mb-5 md:mb-6 rounded-full border border-[#059669]/40 bg-[#ecf4e3]/90 text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] font-bold shadow-sm backdrop-blur-md">
             {t.hero_badge}
           </div>
-          {/* Добавлена белая тень тексту для контраста с космосом */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2 drop-shadow-[0_0_15px_rgba(236,244,227,0.8)]">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2">
             {t.hero_title_1} <br className="hidden md:block"/>
-            <span className="text-[#059669] drop-shadow-none">{t.hero_title_vector}</span> {t.hero_title_2}
+            <span className="text-[#059669]">{t.hero_title_vector}</span> {t.hero_title_2}
           </h1>
         </div>
       </div>
