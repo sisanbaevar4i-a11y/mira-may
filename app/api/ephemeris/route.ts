@@ -1,26 +1,27 @@
 import { NextResponse } from 'next/server';
 import { AstroTime, GeoVector } from 'astronomy-engine';
 
+// Кэшируем результат на сервере на 30 минут (1800 секунд), чтобы не нагружать процессор
+export const revalidate = 1800;
+
 const PLANETS = [
-  { id: "Sun", name: "Sun", nameRu: "Солнце", symbol: "☉" },
-  { id: "Moon", name: "Moon", nameRu: "Луна", symbol: "☽" },
-  { id: "Mercury", name: "Mercury", nameRu: "Меркурий", symbol: "☿" },
-  { id: "Venus", name: "Venus", nameRu: "Венера", symbol: "♀" },
-  { id: "Mars", name: "Mars", nameRu: "Марс", symbol: "♂" },
-  { id: "Jupiter", name: "Jupiter", nameRu: "Юпитер", symbol: "♃" },
-  { id: "Saturn", name: "Saturn", nameRu: "Сатурн", symbol: "♄" }
+  { id: "Sun", name: "SUN", nameRu: "СОЛНЦЕ", symbol: "☀" },
+  { id: "Moon", name: "MOON", nameRu: "ЛУНА", symbol: "☽" },
+  { id: "Mercury", name: "MERCURY", nameRu: "МЕРКУРИЙ", symbol: "☿" },
+  { id: "Venus", name: "VENUS", nameRu: "ВЕНЕРА", symbol: "♀" },
+  { id: "Mars", name: "MARS", nameRu: "МАРС", symbol: "♂" },
+  { id: "Jupiter", name: "JUPITER", nameRu: "ЮПИТЕР", symbol: "♃" },
+  { id: "Saturn", name: "SATURN", nameRu: "САТУРН", symbol: "♄" }
 ];
 
 const SIGNS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
 
-// Функция трансформации экваториальных координат в тропическую эклиптику
-function getEclipticLongitude(bodyId: string, date: Date): number {
-  const time = new AstroTime(date);
+// --- 1. РАСЧЕТ ТРОПИЧЕСКОЙ ДОЛГОТЫ ---
+function getTropicalLongitude(bodyId: string, time: AstroTime): number {
   const vec = GeoVector(bodyId, time, true);
-
-  // Расчет Юлианских столетий от эпохи J2000
   const t = (time.tt - 2451545.0) / 36525.0;
-  // Вычисление точного наклона эклиптики на текущую дату
+
+  // Точный наклон эклиптики
   const eps = 23.43929111 - 0.013004167 * t - 0.0000001639 * t * t + 0.0000005036 * t * t * t;
   const rad = Math.PI / 180.0;
 
@@ -32,10 +33,19 @@ function getEclipticLongitude(bodyId: string, date: Date): number {
   return lon;
 }
 
+// --- 2. АЙАНАМША ЛАХИРИ (Ведическая поправка для Джйотиш / Astro.Expert) ---
+function getLahiriAyanamsa(t: number): number {
+  // Базовое значение на эпоху J2000 + годовая прецессия (~50.29 секунд дуги в год)
+  return 23.853 + (t * 1.3969);
+}
+
+// --- 3. ФОРМАТИРОВАНИЕ В ЗНАК И ГРАДУСЫ ---
 function formatZodiac(longitude: number) {
-  const signIndex = Math.floor(longitude / 30);
-  const degree = Math.floor(longitude % 30);
-  const minutes = Math.floor((longitude % 1) * 60);
+  const normalizedLon = ((longitude % 360) + 360) % 360;
+  const signIndex = Math.floor(normalizedLon / 30);
+  const degree = Math.floor(normalizedLon % 30);
+  const minutes = Math.floor((normalizedLon % 1) * 60);
+
   return {
     sign: SIGNS[signIndex],
     degreeStr: `${degree.toString().padStart(2, '0')}°${minutes.toString().padStart(2, '0')}'`
@@ -45,32 +55,75 @@ function formatZodiac(longitude: number) {
 export async function GET() {
   try {
     const date = new Date();
-    // Создаем слепок времени на 1 час вперед для вычисления скорости
-    const futureDate = new Date(date.getTime() + 3600000);
+    const timeNow = new AstroTime(date);
+    const futureDate = new Date(date.getTime() + 3600000); // +1 час для определения ретроградности
+    const timeFuture = new AstroTime(futureDate);
+
+    // Юлианские столетия от J2000
+    const t = (timeNow.tt - 2451545.0) / 36525.0;
+    const ayanamsa = getLahiriAyanamsa(t);
+
     const results = [];
 
+    // --- ОБРАБОТКА ОСНОВНЫХ 7 ПЛАНЕТ ---
     for (const p of PLANETS) {
-      const lon1 = getEclipticLongitude(p.id, date);
-      const lon2 = getEclipticLongitude(p.id, futureDate);
+      const tropNow = getTropicalLongitude(p.id, timeNow);
+      const tropFuture = getTropicalLongitude(p.id, timeFuture);
 
-      let diff = lon2 - lon1;
-      // Корректировка перехода через 0 градусов Овна
+      // Перевод в Сидерический (Ведический) зодиак
+      const vedicLonNow = (tropNow - ayanamsa + 360) % 360;
+      const vedicLonFuture = (tropFuture - ayanamsa + 360) % 360;
+
+      let diff = vedicLonFuture - vedicLonNow;
       if (diff < -180) diff += 360;
       if (diff > 180) diff -= 360;
 
-      const { sign, degreeStr } = formatZodiac(lon1);
-
-      // Логика ретроградности (Солнце и Луна всегда директны)
-      const isRetrograde = (diff < 0 && p.id !== "Sun" && p.id !== "Moon") ? " ℞" : "";
+      const { sign, degreeStr } = formatZodiac(vedicLonNow);
+      const isRetrograde = (diff < 0 && p.id !== "Sun" && p.id !== "Moon");
 
       results.push({
+        id: p.id.toLowerCase(),
         name: p.name,
         nameRu: p.nameRu,
         symbol: p.symbol,
         sign: sign,
-        degree: degreeStr + isRetrograde
+        degree: degreeStr,
+        isRetrograde: isRetrograde
       });
     }
+
+    // --- РАСЧЕТ РАХУ И КЕТУ (ВЕДИЧЕСКИЕ ЛУННЫЕ УЗЛЫ) ---
+    // Формула средней долготы Восходящего узла (Раху)
+    let rahuTropical = (125.044522 - 1934.136261 * t) % 360;
+    if (rahuTropical < 0) rahuTropical += 360;
+
+    const rahuVedic = (rahuTropical - ayanamsa + 360) % 360;
+    const ketuVedic = (rahuVedic + 180) % 360;
+
+    const rahuFormatted = formatZodiac(rahuVedic);
+    const ketuFormatted = formatZodiac(ketuVedic);
+
+    // Раху (Восходящий узел)
+    results.push({
+      id: "rahu",
+      name: "RAHU",
+      nameRu: "РАХУ",
+      symbol: "☊",
+      sign: rahuFormatted.sign,
+      degree: rahuFormatted.degreeStr,
+      isRetrograde: true // Узлы всегда ретроградны
+    });
+
+    // Кету (Нисходящий узел)
+    results.push({
+      id: "ketu",
+      name: "KETU",
+      nameRu: "КЕТУ",
+      symbol: "☋",
+      sign: ketuFormatted.sign,
+      degree: ketuFormatted.degreeStr,
+      isRetrograde: true
+    });
 
     return NextResponse.json(results);
   } catch (error) {
