@@ -102,7 +102,6 @@ const LANGUAGES = [
   { code: 'EN', name: 'English' }
 ];
 
-// --- ДИНАМИЧЕСКИЙ КОМПОНЕНТ КАЛЕНДАРЯ ---
 const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: any }) => {
   const [date, setDate] = useState(new Date());
   const [dbData, setDbData] = useState<Record<string, any>>({});
@@ -170,8 +169,6 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
 
   return (
     <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10 flex flex-col">
-
-      {/* ШАПКА КАЛЕНДАРЯ */}
       <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative shrink-0">
         <h4 className="hidden md:block text-sm md:text-xl font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase opacity-0 select-none">SPACER</h4>
 
@@ -191,11 +188,8 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
         </div>
       </div>
 
-      {/* СКРОЛЛИРУЕМАЯ СЕТКА КАЛЕНДАРЯ */}
-      <div className="w-full overflow-x-auto custom-scrollbar pb-1">
+      <div className="w-full overflow-x-auto custom-scrollbar pb-2">
         <div className="min-w-[768px] w-full flex flex-col">
-
-          {/* Дни недели */}
           <div className="grid grid-cols-7 bg-[#e4eed8]">
             {daysOfWeek.map((d, i) => (
               <div key={d} className={`py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
@@ -203,8 +197,6 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
               </div>
             ))}
           </div>
-
-          {/* Ячейки */}
           <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
             {cells.map((cell, index) => {
               const isRu = currentLang === 'RU';
@@ -247,23 +239,14 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
               );
             })}
           </div>
-
         </div>
       </div>
-
     </div>
   );
 };
 
-
-// --- ВЕКТОРНАЯ ГРАФИКА И ИКОНКИ ---
 const HeartLogo = () => (
-  <svg
-    className="w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0"
-    viewBox="0 0 100 100"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg className="w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeLinejoin="round">
       <polygon points="50,38 35,28 25,45 50,70 75,45 65,28" fill="#059669" />
       <polygon points="50,25 38,12 35,28 50,38" fill="#047857" />
@@ -395,13 +378,7 @@ const StarField = () => {
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-full absolute inset-0 cursor-crosshair z-10"
-      style={{ background: 'transparent' }}
-    />
-  );
+  return <canvas ref={canvasRef} className="w-full h-full absolute inset-0 cursor-crosshair z-10" style={{ background: 'transparent' }} />;
 };
 
 const FlameIcon = () => (
@@ -644,14 +621,17 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="relative w-full py-16 md:py-24 flex flex-col items-center justify-center overflow-hidden text-center px-4">
-        <div className="absolute inset-0 bg-[#ecf4e3]"></div>
+      {/* --- ОБНОВЛЕННЫЙ БЛОК ГЛАВНОЙ ШАПКИ С СЕВЕРНЫМ СИЯНИЕМ --- */}
+      <div className="relative w-full py-16 md:py-24 flex flex-col items-center justify-center overflow-hidden text-center px-4 bg-[#0a1f14]">
+
+        {/* Адаптивный фильтр для вашей картинки hero-bg.jpg */}
         <img
-          src="https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=2070&auto=format&fit=crop"
-          alt="Space Header"
-          className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-multiply"
+          src="/hero-bg.jpg"
+          alt="Aurora Header"
+          className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen filter hue-rotate-[-30deg] saturate-50 brightness-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#ecf4e3]/90 via-[#ecf4e3]/70 to-[#ecf4e3]" />
+
+        <div className="absolute inset-0 bg-gradient-to-b from-[#ecf4e3]/80 via-[#ecf4e3]/90 to-[#ecf4e3]" />
 
         <div className="relative z-10 max-w-5xl mx-auto">
           <div className="inline-block px-4 py-1.5 mb-5 md:mb-6 rounded-full border border-[#059669]/30 bg-[#059669]/10 text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] font-bold shadow-sm backdrop-blur-sm">
@@ -663,6 +643,7 @@ export default function Home() {
           </h1>
         </div>
       </div>
+      {/* -------------------------------------------------------- */}
 
       <div className="w-full bg-[#e4eed8] border-y border-[#d0e5c0] py-3 overflow-hidden relative flex items-center shadow-sm">
         <div className="absolute left-0 top-0 bottom-0 z-10 bg-gradient-to-r from-[#e4eed8] via-[#e4eed8] to-transparent w-28 md:w-40 flex items-center px-4 md:px-8 border-r border-[#d0e5c0]/50">
