@@ -248,33 +248,33 @@ useEffect(() => {
 
 
 // --- ВЕКТОРНАЯ ГРАФИКА И ИКОНКИ ---
-const RoseLogo = () => (
+const HeartLogo = () => (
   <svg
-    className="w-10 h-10 md:w-12 md:h-12 text-[#059669] transform hover:scale-105 transition-transform duration-500 drop-shadow-sm flex-shrink-0"
+    className="w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0"
     viewBox="0 0 100 100"
-    fill="white"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
   >
-    <path d="M 60 20 C 70 5 95 10 90 25 C 85 40 65 35 60 20 Z" fill="#ecf4e3" />
-    <path d="M 65 25 L 85 18 M 70 25 L 80 30" strokeWidth="1" />
-    <path d="M 65 70 C 85 75 95 95 80 95 C 65 95 55 80 65 70 Z" fill="#ecf4e3" />
-    <path d="M 70 78 L 85 90 M 75 80 L 85 75" strokeWidth="1" />
-    <path d="M 35 70 C 15 75 5 95 20 95 C 35 95 45 80 35 70 Z" fill="#ecf4e3" />
-    <path d="M 30 78 L 15 90 M 25 80 L 15 75" strokeWidth="1" />
-    <path d="M 15 45 C 5 25 35 10 50 15 C 65 10 95 25 85 45 C 95 65 75 85 50 80 C 25 85 5 65 15 45 Z" fill="white" />
-    <path d="M 20 40 C 20 60 40 75 50 75 C 60 75 80 60 80 40 C 80 20 60 15 50 20 C 40 15 20 20 20 40 Z" fill="#ecf4e3" />
-    <path d="M 25 35 C 25 55 40 65 50 65 C 60 65 75 55 75 35 C 75 25 60 20 50 25 C 40 20 25 25 25 35 Z" fill="white" />
-    <path d="M 32 40 C 32 55 42 60 50 60 C 58 60 68 55 68 40 C 68 30 55 28 50 32 C 45 28 32 30 32 40 Z" fill="#ecf4e3" />
-    <path d="M 38 42 C 38 52 45 55 50 55 C 55 55 62 52 62 42 C 62 35 55 35 50 38 C 45 35 38 35 38 42 Z" fill="white" />
-    <path d="M 45 42 C 45 48 55 48 55 42 C 55 38 45 38 45 42" fill="none" strokeWidth="2" />
-    <path d="M 48 43 C 48 45 52 45 52 43 C 52 41 48 41 48 43" fill="#059669" />
-    <path d="M 15 45 Q 35 60 50 65 Q 65 60 85 45" fill="none" strokeWidth="1.5" />
-    <path d="M 20 40 Q 40 55 50 60 Q 60 55 80 40" fill="none" strokeWidth="1" />
-    <path d="M 25 35 Q 45 50 50 55 Q 55 50 75 35" fill="none" strokeWidth="1" />
-    <path d="M 10 50 C 25 65 40 80 50 80 C 60 80 75 65 90 50" fill="none" strokeWidth="1" />
+    <g stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeLinejoin="round">
+      {/* Центральная площадка */}
+      <polygon points="50,38 35,28 25,45 50,70 75,45 65,28" fill="#059669" />
+
+      {/* Левые грани (Тень) */}
+      <polygon points="50,25 38,12 35,28 50,38" fill="#047857" />
+      <polygon points="38,12 25,10 35,28" fill="#064e3b" />
+      <polygon points="25,10 12,18 25,45 35,28" fill="#065f46" />
+      <polygon points="12,18 5,35 25,45" fill="#022c22" />
+      <polygon points="5,35 15,60 50,70 25,45" fill="#0f766e" />
+      <polygon points="15,60 50,95 50,70" fill="#022c22" />
+
+      {/* Правые грани (Световые блики) */}
+      <polygon points="50,25 62,12 65,28 50,38" fill="#047857" />
+      <polygon points="62,12 75,10 65,28" fill="#10b981" />
+      <polygon points="75,10 88,18 75,45 65,28" fill="#6ee7b7" />
+      <polygon points="88,18 95,35 75,45" fill="#a7f3d0" />
+      <polygon points="95,35 85,60 50,70 75,45" fill="#34d399" />
+      <polygon points="85,60 50,95 50,70" fill="#059669" />
+    </g>
   </svg>
 );
 
