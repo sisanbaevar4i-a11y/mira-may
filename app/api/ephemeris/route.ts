@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { AstroTime, GeoVector } from 'astronomy-engine';
 
-// Кэшируем результат на сервере на 30 минут (1800 секунд), чтобы не нагружать процессор
+// Кэшируем результат на сервере на 30 минут (1800 секунд)
 export const revalidate = 1800;
 
 const PLANETS = [
@@ -16,30 +16,32 @@ const PLANETS = [
 
 const SIGNS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
 
-// --- 1. РАСЧЕТ ТРОПИЧЕСКОЙ ДОЛГОТЫ ---
-function getTropicalLongitude(bodyId: string, time: AstroTime): number {
-  const vec = GeoVector(bodyId, time, true);
-  const t = (time.tt - 2451545.0) / 36525.0;
+// --- ФУНДАМЕНТАЛЬНЫЕ КОНСТАНТЫ ЭПОХИ J2000 ---
+// Айанамша Лахири на 1 января 2000 года (23° 51' 11")
+const AYANAMSHA_J2000 = 23.8530555;
+// Точный наклон эклиптики на эпоху J2000
+const EPS_J2000 = 23.4392794444 * (Math.PI / 180.0);
 
-  // Точный наклон эклиптики
-  const eps = 23.43929111 - 0.013004167 * t - 0.0000001639 * t * t + 0.0000005036 * t * t * t;
-  const rad = Math.PI / 180.0;
+// --- ИДЕАЛЬНЫЙ РАСЧЕТ СИДЕРИЧЕСКОЙ ДОЛГОТЫ ---
+function getSiderealLongitude(bodyId: string, time: AstroTime): number {
+  // 1. Получаем геоцентрический вектор на J2000 (с учетом аберрации света)
+  const vec = GeoVector(bodyId, time, true);
 
   const x = vec.x;
-  const y = vec.y * Math.cos(eps * rad) + vec.z * Math.sin(eps * rad);
+  // 2. Вращаем экваториальную плоскость до эклиптики J2000
+  const y = vec.y * Math.cos(EPS_J2000) + vec.z * Math.sin(EPS_J2000);
 
-  let lon = Math.atan2(y, x) / rad;
-  if (lon < 0) lon += 360;
-  return lon;
+  let lonJ2000 = Math.atan2(y, x) * (180.0 / Math.PI);
+  if (lonJ2000 < 0) lonJ2000 += 360;
+
+  // 3. Вычитаем константу Лахири. Это жестко привязывает зодиак к звездам.
+  let sidereal = lonJ2000 - AYANAMSHA_J2000;
+  if (sidereal < 0) sidereal += 360;
+
+  return sidereal;
 }
 
-// --- 2. АЙАНАМША ЛАХИРИ (Ведическая поправка для Джйотиш / Astro.Expert) ---
-function getLahiriAyanamsa(t: number): number {
-  // Базовое значение на эпоху J2000 + годовая прецессия (~50.29 секунд дуги в год)
-  return 23.853 + (t * 1.3969);
-}
-
-// --- 3. ФОРМАТИРОВАНИЕ В ЗНАК И ГРАДУСЫ ---
+// --- ФОРМАТИРОВАНИЕ В ЗНАК И ГРАДУСЫ ---
 function formatZodiac(longitude: number) {
   const normalizedLon = ((longitude % 360) + 360) % 360;
   const signIndex = Math.floor(normalizedLon / 30);
@@ -56,23 +58,17 @@ export async function GET() {
   try {
     const date = new Date();
     const timeNow = new AstroTime(date);
-    const futureDate = new Date(date.getTime() + 3600000); // +1 час для определения ретроградности
-    const timeFuture = new AstroTime(futureDate);
 
-    // Юлианские столетия от J2000
-    const t = (timeNow.tt - 2451545.0) / 36525.0;
-    const ayanamsa = getLahiriAyanamsa(t);
+    // Вектор будущего для вычисления ретроградности
+    const futureDate = new Date(date.getTime() + 3600000);
+    const timeFuture = new AstroTime(futureDate);
 
     const results = [];
 
     // --- ОБРАБОТКА ОСНОВНЫХ 7 ПЛАНЕТ ---
     for (const p of PLANETS) {
-      const tropNow = getTropicalLongitude(p.id, timeNow);
-      const tropFuture = getTropicalLongitude(p.id, timeFuture);
-
-      // Перевод в Сидерический (Ведический) зодиак
-      const vedicLonNow = (tropNow - ayanamsa + 360) % 360;
-      const vedicLonFuture = (tropFuture - ayanamsa + 360) % 360;
+      const vedicLonNow = getSiderealLongitude(p.id, timeNow);
+      const vedicLonFuture = getSiderealLongitude(p.id, timeFuture);
 
       let diff = vedicLonFuture - vedicLonNow;
       if (diff < -180) diff += 360;
@@ -92,18 +88,19 @@ export async function GET() {
       });
     }
 
-    // --- РАСЧЕТ РАХУ И КЕТУ (ВЕДИЧЕСКИЕ ЛУННЫЕ УЗЛЫ) ---
-    // Формула средней долготы Восходящего узла (Раху)
-    let rahuTropical = (125.044522 - 1934.136261 * t) % 360;
-    if (rahuTropical < 0) rahuTropical += 360;
+    // --- РАСЧЕТ РАХУ И КЕТУ (Истинные средние узлы) ---
+    const t = (timeNow.tt - 2451545.0) / 36525.0; // Юлианские столетия от J2000
 
-    const rahuVedic = (rahuTropical - ayanamsa + 360) % 360;
+    // Точная формула средней долготы узла
+    let omega = 125.044522 - 1934.136261 * t + 0.0020708 * t * t + (t * t * t) / 450000;
+    omega = (omega % 360 + 360) % 360;
+
+    const rahuVedic = (omega - AYANAMSHA_J2000 + 360) % 360;
     const ketuVedic = (rahuVedic + 180) % 360;
 
     const rahuFormatted = formatZodiac(rahuVedic);
     const ketuFormatted = formatZodiac(ketuVedic);
 
-    // Раху (Восходящий узел)
     results.push({
       id: "rahu",
       name: "RAHU",
@@ -111,10 +108,9 @@ export async function GET() {
       symbol: "☊",
       sign: rahuFormatted.sign,
       degree: rahuFormatted.degreeStr,
-      isRetrograde: true // Узлы всегда ретроградны
+      isRetrograde: true
     });
 
-    // Кету (Нисходящий узел)
     results.push({
       id: "ketu",
       name: "KETU",
