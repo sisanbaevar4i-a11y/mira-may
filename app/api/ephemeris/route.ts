@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AstroTime, EclipticLongitude } from 'astronomy-engine';
+import { AstroTime, GeoVector } from 'astronomy-engine';
 
 export const revalidate = 1800;
 
@@ -15,19 +15,28 @@ const PLANETS = [
 
 const SIGNS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
 
-// --- ТОЧНАЯ АЙАНАМША ЛАХИРИ (Chitrapaksha) ---
-function getTrueLahiriAyanamsa(t: number): number {
-  // t - Юлианские столетия от J2000
-  const meanAyanamsa = 23.8530555 + (1.396972222 * t) + (0.0003086 * t * t);
+// --- ФУНДАМЕНТАЛЬНЫЕ КОНСТАНТЫ ЭПОХИ J2000 ---
+const AYANAMSHA_J2000 = 23.8530555;
+const EPS_J2000 = 23.4392794444 * (Math.PI / 180.0);
 
-  // Астрономическая нутация (колебание оси), которую учитывает Astro.Expert
-  const omega = (125.04452 - 1934.136261 * t) % 360;
-  const L = (280.4665 + 36000.7698 * t) % 360;
-  const rad = Math.PI / 180.0;
+// --- НАДЕЖНЫЙ РАСЧЕТ СИДЕРИЧЕСКОЙ ДОЛГОТЫ ---
+function getSiderealLongitude(bodyId: string, time: AstroTime): number {
+  // Получаем базовый геоцентрический вектор
+  const vec = GeoVector(bodyId, time, true);
 
-  const nutation = -0.004778 * Math.sin(omega * rad) - 0.00034 * Math.sin(2 * L * rad);
+  // Вращаем вектор на наклон эклиптики
+  const x = vec.x;
+  const y = vec.y * Math.cos(EPS_J2000) + vec.z * Math.sin(EPS_J2000);
 
-  return meanAyanamsa + nutation;
+  // Вычисляем долготу
+  let lonJ2000 = Math.atan2(y, x) * (180.0 / Math.PI);
+  if (lonJ2000 < 0) lonJ2000 += 360;
+
+  // Вычитаем константу Лахири
+  let sidereal = lonJ2000 - AYANAMSHA_J2000;
+  if (sidereal < 0) sidereal += 360;
+
+  return sidereal;
 }
 
 function formatZodiac(longitude: number) {
@@ -49,21 +58,12 @@ export async function GET() {
     const futureDate = new Date(date.getTime() + 3600000);
     const timeFuture = new AstroTime(futureDate);
 
-    // Столетия от J2000
-    const t = (timeNow.tt - 2451545.0) / 36525.0;
-    const trueAyanamsa = getTrueLahiriAyanamsa(t);
-
     const results = [];
 
     // --- ОБРАБОТКА ОСНОВНЫХ 7 ПЛАНЕТ ---
     for (const p of PLANETS) {
-      // EclipticLongitude выдает безупречную Тропическую долготу текущей даты
-      const tropNow = EclipticLongitude(p.id, timeNow);
-      const tropFuture = EclipticLongitude(p.id, timeFuture);
-
-      // Перевод в Сидерический зодиак (строго как в Astro.Expert)
-      const vedicLonNow = (tropNow - trueAyanamsa + 360) % 360;
-      const vedicLonFuture = (tropFuture - trueAyanamsa + 360) % 360;
+      const vedicLonNow = getSiderealLongitude(p.id, timeNow);
+      const vedicLonFuture = getSiderealLongitude(p.id, timeFuture);
 
       let diff = vedicLonFuture - vedicLonNow;
       if (diff < -180) diff += 360;
@@ -83,16 +83,22 @@ export async function GET() {
       });
     }
 
-    // --- РАСЧЕТ ИСТИННЫХ УЗЛОВ РАХУ И КЕТУ (True Node) ---
+    // --- РАСЧЕТ ИСТИННЫХ УЗЛОВ РАХУ И КЕТУ ---
+    const t = (timeNow.tt - 2451545.0) / 36525.0;
+
     const meanOmega = (125.04452 - 1934.136261 * t + 0.0020708 * t * t) % 360;
-    const L = (280.4665 + 36000.7698 * t) % 360; // Солнце
+    const L = (280.4665 + 36000.7698 * t) % 360;
     const rad = Math.PI / 180.0;
 
-    // Гравитационная поправка Истинного узла (решает проблему расхождения на ~1.5 градуса)
+    const trueAyanamsa = 23.8530555 + (1.396972222 * t);
+    const nutation = -0.004778 * Math.sin(meanOmega * rad) - 0.00034 * Math.sin(2 * L * rad);
+    const ofDateAyanamsa = trueAyanamsa + nutation;
+
     const trueRahuTrop = meanOmega - 1.4979 * Math.sin(2 * (L - meanOmega) * rad);
 
-    const rahuVedic = (trueRahuTrop - trueAyanamsa + 360) % 360;
-    const ketuVedic = (rahuVedic + 180) % 360;
+    let rahuVedic = (trueRahuTrop - ofDateAyanamsa) % 360;
+    if (rahuVedic < 0) rahuVedic += 360;
+    let ketuVedic = (rahuVedic + 180) % 360;
 
     const rahuFormatted = formatZodiac(rahuVedic);
     const ketuFormatted = formatZodiac(ketuVedic);
@@ -120,6 +126,6 @@ export async function GET() {
     return NextResponse.json(results);
   } catch (error) {
     console.error("Критическая ошибка математического ядра:", error);
-    return NextResponse.json({ error: "Ошибка вычислений эфемерид" }, { status: 500 });
+    return NextResponse.json({ error: "Ошибка вычислений эфемерид: " + (error as Error).message }, { status: 500 });
   }
 }
