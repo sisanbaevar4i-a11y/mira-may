@@ -116,16 +116,27 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
   const monthName = currentLang === 'RU' ? monthsRU[month] : monthsEN[month];
   const daysOfWeek = currentLang === 'RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  useEffect(() => {
+useEffect(() => {
     async function fetchMonth() {
       setIsLoading(true);
       const y = year;
       const m = String(month + 1).padStart(2, '0');
 
-      const { data } = await supabase
+      // Вычисляем последний день текущего месяца для создания точного диапазона
+      const lastDay = new Date(y, month + 1, 0).getDate();
+      const startDate = `${y}-${m}-01`;
+      const endDate = `${y}-${m}-${lastDay}`;
+
+      const { data, error } = await supabase
         .from('nakshatras')
         .select('*')
-        .like('calendar_date', `${y}-${m}-%`);
+        .gte('calendar_date', startDate)
+        .lte('calendar_date', endDate);
+
+      // Включаем жесткий мониторинг ошибок в консоли браузера
+      if (error) {
+        console.error("Системный сбой при запросе матриц накшатр:", error);
+      }
 
       const map: Record<string, any> = {};
       if (data) {
