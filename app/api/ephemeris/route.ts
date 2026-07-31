@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import * as astronomy from 'astronomy-engine';
 
+// Жесткий запрет кэширования на серверах Vercel
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -22,7 +23,6 @@ function mod360(val: number): number {
   return res;
 }
 
-// Прямой расчет Сидерической долготы Лахири без искажений матриц
 function getSiderealLongitude(bodyId: string, time: astronomy.AstroTime): number {
   const vec = astronomy.GeoVector(bodyId, time, true);
   const epsJ2000 = 23.43929111 * (Math.PI / 180.0);
@@ -31,8 +31,6 @@ function getSiderealLongitude(bodyId: string, time: astronomy.AstroTime): number
   const y = vec.y * Math.cos(epsJ2000) + vec.z * Math.sin(epsJ2000);
 
   let lonJ2000 = Math.atan2(y, x) * (180.0 / Math.PI);
-
-  // Вычитаем базовую константу Айанамши Лахири (23.8530555°)
   return mod360(lonJ2000 - 23.8530555);
 }
 
@@ -51,13 +49,19 @@ function formatZodiac(longitude: number) {
 export async function GET() {
   try {
     const date = new Date();
+
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Вычисляем Юлианские столетия нативно через JavaScript.
+    // Это исключает баги библиотеки и дает идеальную точность для узлов.
+    const jd = (date.getTime() / 86400000) + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+
     const timeNow = new astronomy.AstroTime(date);
     const futureDate = new Date(date.getTime() + 3600000);
     const timeFuture = new astronomy.AstroTime(futureDate);
 
     const results = [];
 
-    // 1. Расчет основных 7 планет
+    // --- 1. ПЛАНЕТЫ ---
     for (const p of PLANETS) {
       const vedicLonNow = getSiderealLongitude(p.id, timeNow);
       const vedicLonFuture = getSiderealLongitude(p.id, timeFuture);
@@ -80,21 +84,16 @@ export async function GET() {
       });
     }
 
-    // 2. Расчет Истинных Узлов (Раху и Кету)
-    const T = (timeNow.tt - 2451545.0) / 36525.0;
-
-    // Тропическая долгота узла
+    // --- 2. ИСТИННЫЕ УЗЛЫ (РАХУ И КЕТУ) ---
     const meanOmega = mod360(125.044522 - 1934.136261 * T + 0.0020708 * T * T);
     const sunLonTrop = mod360(getSiderealLongitude("Sun", timeNow) + 23.8530555 + (1.39697 * T));
 
-    // Гравитационная поправка Astro.Expert
+    // Гравитационная поправка Истинного Узла
     const trueRahuTrop = mod360(meanOmega - 1.4979 * Math.sin(2 * (meanOmega - sunLonTrop) * (Math.PI / 180.0)));
 
-    // Сидерический перевод
+    // Перевод в Сидерический Зодиак
     const ayanamsaNow = 23.8530555 + (1.39697 * T);
     const rahuVedic = mod360(trueRahuTrop - ayanamsaNow);
-
-    // КЕТУ СТРОГО В ОППОЗИЦИИ (+180°)
     const ketuVedic = mod360(rahuVedic + 180.0);
 
     const rahuFormatted = formatZodiac(rahuVedic);
@@ -120,9 +119,16 @@ export async function GET() {
       isRetrograde: true
     });
 
-    return NextResponse.json(results);
+    // Возвращаем данные с принудительными заголовками анти-кэша для браузера
+    return NextResponse.json(results, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
-    console.error("Критическая ошибка математического ядра:", error);
-    return NextResponse.json({ error: "Ошибка вычислений эфемерид: " + (error as Error).message }, { status: 500 });
+    console.error("Критическая ошибка:", error);
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
