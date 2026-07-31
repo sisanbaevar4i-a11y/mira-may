@@ -169,8 +169,10 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
   }
 
   return (
-    <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10">
-      <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative">
+    <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10 flex flex-col">
+
+      {/* ШАПКА КАЛЕНДАРЯ */}
+      <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative shrink-0">
         <h4 className="hidden md:block text-sm md:text-xl font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase opacity-0 select-none">SPACER</h4>
 
         <div className="flex items-center justify-between md:justify-center gap-4 bg-white px-2 py-1.5 rounded-xl border border-[#d0e5c0] shadow-sm w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2">
@@ -189,56 +191,66 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
         </div>
       </div>
 
-      <div className="grid grid-cols-7 bg-[#e4eed8]">
-        {daysOfWeek.map((d, i) => (
-          <div key={d} className={`py-3 text-center text-[10px] md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
-            {d}
-          </div>
-        ))}
-      </div>
+      {/* СКРОЛЛИРУЕМАЯ СЕТКА КАЛЕНДАРЯ */}
+      <div className="w-full overflow-x-auto custom-scrollbar pb-1">
+        <div className="min-w-[768px] w-full flex flex-col">
 
-      <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
-        {cells.map((cell, index) => {
-          const isRu = currentLang === 'RU';
-          let slot1 = '';
-          let slot2 = '';
-
-          if (!cell.isEmpty && cell.dateKey && dbData[cell.dateKey]) {
-            const row = dbData[cell.dateKey];
-            const times = (isRu ? row.nak_time_ru : row.nak_time_en)?.split('|') || [];
-            const texts = (isRu ? row.data_ru : row.data_en)?.split('|') || [];
-
-            const formatSlot = (text: string, time: string) => text ? `${text} \n${time ? `(с ${time})` : ''}`.trim() : '';
-            const formatSlotEN = (text: string, time: string) => text ? `${text} \n${time ? `(at ${time})` : ''}`.trim() : '';
-
-            slot1 = isRu ? formatSlot(texts[0], times[0]) : formatSlotEN(texts[0], times[0]);
-            slot2 = isRu ? formatSlot(texts[1], times[1]) : formatSlotEN(texts[1], times[1]);
-          }
-
-          return (
-            <div key={index} className={`min-h-[110px] md:min-h-[140px] p-1.5 md:p-3 border-b border-r border-[#d0e5c0] flex flex-col transition-colors ${!cell.isEmpty ? 'bg-white hover:bg-[#ecf4e3]' : 'bg-[#ecf4e3]/30 opacity-60'} ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
-              <div className={`text-right text-xs md:text-base font-bold mb-1 md:mb-2 ${!cell.isEmpty ? ((index % 7 > 4) ? 'text-[#059669]' : 'text-[#112a1a]') : 'text-[#4a6b52]'}`}>
-                {cell.day}
+          {/* Дни недели */}
+          <div className="grid grid-cols-7 bg-[#e4eed8]">
+            {daysOfWeek.map((d, i) => (
+              <div key={d} className={`py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
+                {d}
               </div>
+            ))}
+          </div>
 
-              {!cell.isEmpty && (slot1 || slot2) && (
-                <div className="mt-auto flex flex-col gap-1.5 md:gap-2">
-                  {slot1 && (
-                    <div className="text-[9px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-1.5 md:p-2 rounded border border-[#d0e5c0]">
-                      {slot1}
-                    </div>
-                  )}
-                  {slot2 && (
-                    <div className="text-[9px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-1.5 md:p-2 rounded border border-[#059669]/30">
-                      {slot2}
+          {/* Ячейки */}
+          <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
+            {cells.map((cell, index) => {
+              const isRu = currentLang === 'RU';
+              let slot1 = '';
+              let slot2 = '';
+
+              if (!cell.isEmpty && cell.dateKey && dbData[cell.dateKey]) {
+                const row = dbData[cell.dateKey];
+                const times = (isRu ? row.nak_time_ru : row.nak_time_en)?.split('|') || [];
+                const texts = (isRu ? row.data_ru : row.data_en)?.split('|') || [];
+
+                const formatSlot = (text: string, time: string) => text ? `${text} \n${time ? `(с ${time})` : ''}`.trim() : '';
+                const formatSlotEN = (text: string, time: string) => text ? `${text} \n${time ? `(at ${time})` : ''}`.trim() : '';
+
+                slot1 = isRu ? formatSlot(texts[0], times[0]) : formatSlotEN(texts[0], times[0]);
+                slot2 = isRu ? formatSlot(texts[1], times[1]) : formatSlotEN(texts[1], times[1]);
+              }
+
+              return (
+                <div key={index} className={`min-h-[120px] md:min-h-[140px] p-2 md:p-3 border-b border-r border-[#d0e5c0] flex flex-col transition-colors ${!cell.isEmpty ? 'bg-white hover:bg-[#ecf4e3]' : 'bg-[#ecf4e3]/30 opacity-60'} ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
+                  <div className={`text-right text-sm md:text-base font-bold mb-2 ${!cell.isEmpty ? ((index % 7 > 4) ? 'text-[#059669]' : 'text-[#112a1a]') : 'text-[#4a6b52]'}`}>
+                    {cell.day}
+                  </div>
+
+                  {!cell.isEmpty && (slot1 || slot2) && (
+                    <div className="mt-auto flex flex-col gap-2">
+                      {slot1 && (
+                        <div className="text-[10px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-2 rounded border border-[#d0e5c0]">
+                          {slot1}
+                        </div>
+                      )}
+                      {slot2 && (
+                        <div className="text-[10px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-2 rounded border border-[#059669]/30">
+                          {slot2}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+
+        </div>
       </div>
+
     </div>
   );
 };
@@ -427,7 +439,6 @@ export default function Home() {
 
   const t = DICTIONARY[currentLang];
 
-  // ИНИЦИАЛИЗАЦИЯ ГЛОБАЛЬНОЙ ПАМЯТИ
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedLang = localStorage.getItem('mira_lang');
@@ -473,7 +484,6 @@ export default function Home() {
     fetchForecasts();
     fetchEphemeris();
 
-    // Автоматическое обновление эфемерид каждые 3 часа
     const intervalId = setInterval(() => {
       fetchEphemeris();
     }, 3 * 60 * 60 * 1000);
@@ -493,7 +503,7 @@ export default function Home() {
   const handleOpenRetrogrades = () => {
     const isRU = currentLang === 'RU';
     const tableContent = (
-      <div className="overflow-x-auto w-full relative z-10">
+      <div className="overflow-x-auto w-full relative z-10 custom-scrollbar pb-2">
         <table className="w-full text-left border-collapse min-w-[500px] bg-white rounded-xl shadow-sm">
           <thead>
             <tr className="border-b border-[#d0e5c0] text-[#059669] text-xs uppercase tracking-wider bg-[#ecf4e3]">
@@ -576,10 +586,10 @@ export default function Home() {
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700;800&family=Montserrat:wght@300;400;500;600&display=swap');
 
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(208, 229, 192, 0.4); border-radius: 4px; margin: 4px 0; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(5, 150, 105, 0.6); border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(5, 150, 105, 0.9); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(208, 229, 192, 0.3); border-radius: 4px; margin: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(5, 150, 105, 0.5); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(5, 150, 105, 0.8); }
 
         @keyframes ticker {
           0% { transform: translate3d(0, 0, 0); }
