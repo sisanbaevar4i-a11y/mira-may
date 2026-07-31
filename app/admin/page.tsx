@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient'; // Убедитесь, что путь к supabaseClient верный
 
 // --- ЭТАЛОННАЯ БАЗА НАКШАТР ---
 const NAKSHATRAS_RU = [
@@ -445,12 +445,24 @@ export default function AdminDashboard() {
                             <div className="flex flex-col gap-3">
                               {/* СЛОТ 1 */}
                               <div className="flex gap-2">
-                                <input
-                                  type="time"
-                                  value={currentData.time_ru_1}
-                                  onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru_1', e.target.value)}
-                                  className="w-24 bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
-                                />
+                                <div className="relative w-24 shrink-0 group">
+                                  <input
+                                    type="time"
+                                    value={currentData.time_ru_1}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru_1', e.target.value)}
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
+                                  />
+                                  {currentData.time_ru_1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNakshatraGridChange(dateKey, 'time_ru_1', '')}
+                                      className="absolute -top-2 -left-2 w-5 h-5 bg-[#080a0f] text-red-400 rounded-full border border-red-500/40 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10"
+                                      title="Очистить время"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
                                 <select
                                   value={currentData.text_ru_1}
                                   onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru_1', e.target.value)}
@@ -461,12 +473,24 @@ export default function AdminDashboard() {
                               </div>
                               {/* СЛОТ 2 */}
                               <div className="flex gap-2">
-                                <input
-                                  type="time"
-                                  value={currentData.time_ru_2}
-                                  onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru_2', e.target.value)}
-                                  className="w-24 bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
-                                />
+                                <div className="relative w-24 shrink-0 group">
+                                  <input
+                                    type="time"
+                                    value={currentData.time_ru_2}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_ru_2', e.target.value)}
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-indigo-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
+                                  />
+                                  {currentData.time_ru_2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNakshatraGridChange(dateKey, 'time_ru_2', '')}
+                                      className="absolute -top-2 -left-2 w-5 h-5 bg-[#080a0f] text-red-400 rounded-full border border-red-500/40 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10"
+                                      title="Очистить время"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
                                 <select
                                   value={currentData.text_ru_2}
                                   onChange={(e) => handleNakshatraGridChange(dateKey, 'text_ru_2', e.target.value)}
@@ -484,12 +508,24 @@ export default function AdminDashboard() {
                             <div className="flex flex-col gap-3">
                               {/* СЛОТ 1 */}
                               <div className="flex gap-2">
-                                <input
-                                  type="time"
-                                  value={currentData.time_en_1}
-                                  onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en_1', e.target.value)}
-                                  className="w-24 bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
-                                />
+                                <div className="relative w-24 shrink-0 group">
+                                  <input
+                                    type="time"
+                                    value={currentData.time_en_1}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en_1', e.target.value)}
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
+                                  />
+                                  {currentData.time_en_1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNakshatraGridChange(dateKey, 'time_en_1', '')}
+                                      className="absolute -top-2 -left-2 w-5 h-5 bg-[#080a0f] text-red-400 rounded-full border border-red-500/40 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10"
+                                      title="Очистить время"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
                                 <select
                                   value={currentData.text_en_1}
                                   onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en_1', e.target.value)}
@@ -500,12 +536,24 @@ export default function AdminDashboard() {
                               </div>
                               {/* СЛОТ 2 */}
                               <div className="flex gap-2">
-                                <input
-                                  type="time"
-                                  value={currentData.time_en_2}
-                                  onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en_2', e.target.value)}
-                                  className="w-24 bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
-                                />
+                                <div className="relative w-24 shrink-0 group">
+                                  <input
+                                    type="time"
+                                    value={currentData.time_en_2}
+                                    onChange={(e) => handleNakshatraGridChange(dateKey, 'time_en_2', e.target.value)}
+                                    className="w-full bg-[#080a0f] border border-gray-800/80 rounded-lg p-2.5 text-sm text-purple-200 focus:border-indigo-500 focus:outline-none cursor-pointer text-center shadow-inner"
+                                  />
+                                  {currentData.time_en_2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNakshatraGridChange(dateKey, 'time_en_2', '')}
+                                      className="absolute -top-2 -left-2 w-5 h-5 bg-[#080a0f] text-red-400 rounded-full border border-red-500/40 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10"
+                                      title="Очистить время"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
                                 <select
                                   value={currentData.text_en_2}
                                   onChange={(e) => handleNakshatraGridChange(dateKey, 'text_en_2', e.target.value)}
