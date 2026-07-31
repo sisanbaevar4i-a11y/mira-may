@@ -437,7 +437,8 @@ export default function Home() {
 
     async function fetchEphemeris() {
       try {
-        const res = await fetch('/api/ephemeris');
+        // Жесткая блокировка кэширования для этого запроса
+        const res = await fetch('/api/ephemeris', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setEphemerisData(data);
