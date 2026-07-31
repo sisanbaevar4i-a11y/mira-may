@@ -462,6 +462,13 @@ export default function Home() {
 
     fetchForecasts();
     fetchEphemeris();
+
+    // Автоматическое обновление эфемерид каждые 3 часа
+    const intervalId = setInterval(() => {
+      fetchEphemeris();
+    }, 3 * 60 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleOpenForecast = (type: string) => {
@@ -769,7 +776,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-10">
 
           <div className="group bg-white p-8 md:p-10 rounded-[2rem] border border-[#d0e5c0] transition-all duration-500 hover:border-[#059669] hover:shadow-[0_15px_30px_rgba(5,150,105,0.1)] flex flex-col relative overflow-hidden">
-            <div className="mb-6 md:mb-8 text-[#059669] text-4xl font-light">☀</div>
+            <div className="mb-6 md:mb-8 text-[#059669] text-4xl font-light">☽</div>
             <h3 className="text-2xl font-['Cinzel',serif] font-bold mb-4 text-[#112a1a] tracking-wide">{t.grid_1_title}</h3>
             <p className="text-[#4a6b52] mb-8 leading-relaxed text-sm md:text-base font-medium flex-grow">{t.grid_1_desc}</p>
             <button
@@ -781,7 +788,7 @@ export default function Home() {
           </div>
 
           <div className="group bg-white p-8 md:p-10 rounded-[2rem] border border-[#d0e5c0] transition-all duration-500 hover:border-[#059669] hover:shadow-[0_15px_30px_rgba(5,150,105,0.1)] flex flex-col relative overflow-hidden">
-            <div className="mb-6 md:mb-8 text-[#059669] text-4xl font-light">☽</div>
+            <div className="mb-6 md:mb-8 text-[#059669] text-4xl font-light">☀</div>
             <h3 className="text-2xl font-['Cinzel',serif] font-bold mb-4 text-[#112a1a] tracking-wide">{t.grid_2_title}</h3>
             <p className="text-[#4a6b52] mb-8 leading-relaxed text-sm md:text-base font-medium flex-grow">{t.grid_2_desc}</p>
             <button
