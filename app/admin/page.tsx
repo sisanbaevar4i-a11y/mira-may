@@ -179,6 +179,9 @@ export default function AdminDashboard() {
         const { error: uploadError } = await supabase.storage.from('articles').upload(fileName, newImageFile);
         if (uploadError) {
           console.error('Ошибка загрузки изображения:', uploadError);
+          alert(`Ошибка загрузки картинки: ${uploadError.message}`);
+          setIsPublishing(false);
+          return;
         } else {
           const { data: publicURLData } = supabase.storage.from('articles').getPublicUrl(fileName);
           imageUrl = publicURLData.publicUrl;
@@ -197,7 +200,11 @@ export default function AdminDashboard() {
         date_str: dateStrFormatted
       }]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Ошибка базы данных:', insertError);
+        alert(`Ошибка базы данных: ${insertError.message}`);
+        throw insertError;
+      }
 
       alert('Статья успешно опубликована, сэр.');
       setNewTitle('');
@@ -205,9 +212,8 @@ export default function AdminDashboard() {
       setNewContent('');
       setNewImageFile(null);
       fetchData();
-    } catch (err) {
-      console.error(err);
-      alert('Ошибка при публикации статьи.');
+    } catch (err: any) {
+      console.error('Критический сбой:', err);
     } finally {
       setIsPublishing(false);
     }
