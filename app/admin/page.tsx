@@ -31,8 +31,18 @@ type NakshatraDay = {
 export default function AdminDashboard() {
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [retrogrades, setRetrogrades] = useState<any[]>([]);
+  const [articlesList, setArticlesList] = useState<any[]>([]);
 
   const [nakshatrasMap, setNakshatrasMap] = useState<Record<string, NakshatraDay>>({});
+
+  // Состояние формы новой статьи
+  const [newTitle, setNewTitle] = useState('');
+  const [newCategory, setNewCategory] = useState('nakshatras');
+  const [newExcerpt, setNewExcerpt] = useState('');
+  const [newReadTime, setNewReadTime] = useState('5 мин чтения');
+  const [newContent, setNewContent] = useState('');
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -54,25 +64,25 @@ export default function AdminDashboard() {
   async function fetchData() {
     setIsLoading(true);
 
-    // ОПТИМИЗАЦИЯ ЗАПРОСА: Вычисляем границы текущего месяца
     const y = currentYear;
     const m = String(currentMonth + 1).padStart(2, '0');
     const lastDay = new Date(y, currentMonth + 1, 0).getDate();
     const startDate = `${y}-${m}-01`;
     const endDate = `${y}-${m}-${lastDay}`;
 
-    const [resContent, resRetro, resNak] = await Promise.all([
+    const [resContent, resRetro, resNak, resArticles] = await Promise.all([
       supabase.from('site_content').select('*').order('section', { ascending: true }),
       supabase.from('retrogrades').select('*').order('sort_order', { ascending: true }),
-      // Выгружаем данные строго за 1 месяц, обходя лимит в 1000 строк
       supabase.from('nakshatras')
         .select('*')
         .gte('calendar_date', startDate)
-        .lte('calendar_date', endDate)
+        .lte('calendar_date', endDate),
+      supabase.from('articles').select('*').order('created_at', { ascending: false })
     ]);
 
     if (resContent.data) setContentItems(resContent.data);
     if (resRetro.data) setRetrogrades(resRetro.data);
+    if (resArticles.data) setArticlesList(resArticles.data);
 
     const nakMap: Record<string, NakshatraDay> = {};
     if (resNak.data) {
@@ -153,6 +163,65 @@ export default function AdminDashboard() {
     }
   };
 
+  const handlePublishArticle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) {
+      alert('Укажите заголовок статьи, сэр.');
+      return;
+    }
+
+    setIsPublishing(true);
+    let imageUrl = '';
+
+    try {
+      if (newImageFile) {
+        const fileName = `${Date.now()}-${newImageFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('articles').upload(fileName, newImageFile);
+        if (uploadError) {
+          console.error('Ошибка загрузки изображения:', uploadError);
+        } else {
+          const { data: publicURLData } = supabase.storage.from('articles').getPublicUrl(fileName);
+          imageUrl = publicURLData.publicUrl;
+        }
+      }
+
+      const dateStrFormatted = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      const { error: insertError } = await supabase.from('articles').insert([{
+        title: newTitle,
+        category: newCategory,
+        excerpt: newExcerpt,
+        content: newContent,
+        image_url: imageUrl,
+        read_time: newReadTime,
+        date_str: dateStrFormatted
+      }]);
+
+      if (insertError) throw insertError;
+
+      alert('Статья успешно опубликована, сэр.');
+      setNewTitle('');
+      setNewExcerpt('');
+      setNewContent('');
+      setNewImageFile(null);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при публикации статьи.');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleDeleteArticle = async (id: string) => {
+    if (confirm('Подтверждаете удаление статьи?')) {
+      const { error } = await supabase.from('articles').delete().eq('id', id);
+      if (!error) {
+        setArticlesList(prev => prev.filter(a => a.id !== id));
+      }
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     setSaveStatus('Синхронизация с ядром...');
@@ -190,7 +259,6 @@ export default function AdminDashboard() {
           const dateStr = `${currentYear}-${monthFormatted}-${dayFormatted}`;
           const cellData = nakshatrasMap[dateStr];
 
-          // Если слот полностью пустой, но в базе он был, удаляем его
           if (!cellData || (!cellData.text_ru_1 && !cellData.text_ru_2 && !cellData.time_ru_1 && !cellData.time_ru_2 && !cellData.text_en_1 && !cellData.text_en_2)) {
             if (cellData && cellData.id) {
               const { error } = await supabase.from('nakshatras').delete().eq('id', cellData.id);
@@ -273,16 +341,18 @@ export default function AdminDashboard() {
             <div>
               <div className="text-indigo-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-1 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Admin Terminal v6.0 (Responsive Cards)
+                Admin Terminal v7.0 (CMS Articles + Calendar)
               </div>
               <h1 className="text-2xl md:text-3xl font-['Cinzel',serif] font-bold text-white tracking-wide">Панель управления контентом</h1>
             </div>
           </div>
           <div className="flex items-center gap-4 w-full md:w-auto">
             <button onClick={() => window.open('/', '_blank')} className="flex-1 md:flex-initial px-5 py-3 rounded-xl bg-[#0c0e14] border border-gray-700/80 hover:border-indigo-500/50 hover:text-white transition-all text-xs font-semibold tracking-wider uppercase text-gray-400">Сайт ↗</button>
-            <button onClick={handleSave} disabled={isSaving} className="flex-1 md:flex-initial px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all text-white text-xs font-semibold tracking-wider uppercase disabled:opacity-50 shadow-[0_0_20px_rgba(99,102,241,0.4)]">
-              {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-            </button>
+            {activeTab !== 'articles' && (
+              <button onClick={handleSave} disabled={isSaving} className="flex-1 md:flex-initial px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all text-white text-xs font-semibold tracking-wider uppercase disabled:opacity-50 shadow-[0_0_20px_rgba(99,102,241,0.4)]">
+                {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+              </button>
+            )}
           </div>
         </header>
 
@@ -294,9 +364,9 @@ export default function AdminDashboard() {
         )}
 
         <div className="flex gap-3 mb-8 border-b border-gray-800/60 pb-4 overflow-x-auto custom-scrollbar">
-          {['interface', 'retrograde', 'nakshatra'].map(tab => (
+          {['interface', 'retrograde', 'nakshatra', 'articles'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`py-3 px-6 rounded-xl whitespace-nowrap font-medium text-xs tracking-widest uppercase transition-all duration-300 ${activeTab === tab ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] font-bold' : 'bg-[#080a0f] text-gray-400 hover:text-white border border-gray-800/80'}`}>
-              {tab === 'interface' ? 'Тексты интерфейса' : tab === 'retrograde' ? 'Ретроградные планеты' : 'Календарь накшатр (Время+)'}
+              {tab === 'interface' ? 'Тексты интерфейса' : tab === 'retrograde' ? 'Ретроградные планеты' : tab === 'nakshatra' ? 'Календарь накшатр (Время+)' : '📖 Управление статьями'}
             </button>
           ))}
         </div>
@@ -583,6 +653,81 @@ export default function AdminDashboard() {
                   })}
                 </div>
 
+              </div>
+            )}
+
+            {/* ВКЛАДКА 4: УПРАВЛЕНИЕ СТАТЬЯМИ (CMS) */}
+            {activeTab === 'articles' && (
+              <div className="space-y-10">
+                <div className="bg-[#080a0f]/90 border border-gray-800/80 rounded-3xl p-6 md:p-10 shadow-2xl">
+                  <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">Опубликовать новую статью</h2>
+
+                  <form onSubmit={handlePublishArticle} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Заголовок статьи</label>
+                        <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} required placeholder="Например: Накшатра Свати..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Категория</label>
+                        <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                          <option value="nakshatras">Накшатры</option>
+                          <option value="horoscopes">Гороскопы известных личностей</option>
+                          <option value="ayurveda">Аюрведа</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Время чтения</label>
+                        <input type="text" value={newReadTime} onChange={e => setNewReadTime(e.target.value)} placeholder="6 мин чтения" className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Обложка (Фото / Изображение)</label>
+                        <input type="file" accept="image/*" onChange={e => e.target.files && setNewImageFile(e.target.files[0])} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Краткое описание (превью)</label>
+                      <textarea value={newExcerpt} onChange={e => setNewExcerpt(e.target.value)} placeholder="Пару предложений о чем статья..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[80px]" />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Содержимое статьи (Текст)</label>
+                      <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Полный текст статьи..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[160px]" />
+                    </div>
+
+                    <button type="submit" disabled={isPublishing} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs uppercase tracking-wider font-bold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50">
+                      {isPublishing ? 'Публикация в облако...' : 'Опубликовать статью'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* СПИСОК ОПУБЛИКОВАННЫХ СТАТЕЙ */}
+                <div className="bg-[#080a0f]/90 border border-gray-800/80 rounded-3xl p-6 md:p-10 shadow-2xl">
+                  <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">Опубликованные материалы ({articlesList.length})</h2>
+                  {articlesList.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">Пока нет ни одной статьи в базе данных.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {articlesList.map(art => (
+                        <div key={art.id} className="bg-[#030407] border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-950/60 px-2.5 py-1 rounded-md border border-indigo-900/50">{art.category}</span>
+                            <h3 className="text-base font-bold text-white mt-3 mb-2 font-['Cinzel',serif]">{art.title}</h3>
+                            <p className="text-xs text-gray-400 line-clamp-2">{art.excerpt}</p>
+                          </div>
+                          <div className="mt-6 pt-4 border-t border-gray-800/80 flex justify-between items-center">
+                            <span className="text-[10px] text-gray-500">{art.date_str}</span>
+                            <button onClick={() => handleDeleteArticle(art.id)} className="text-xs text-red-400 hover:text-red-300 font-semibold bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors">Удалить</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
