@@ -185,7 +185,8 @@ const StarField = () => {
 
         ctx.beginPath();
         ctx.arc(star.x + offsetX, star.y + offsetY, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(5, 150, 105, ${star.alpha})`;
+        // Усиленная яркость частиц для темного фона Млечного пути
+        ctx.fillStyle = `rgba(16, 185, 129, ${star.alpha})`;
         ctx.fill();
       });
 
@@ -199,7 +200,8 @@ const StarField = () => {
             ctx.beginPath();
             ctx.moveTo(stars[i].x, stars[i].y);
             ctx.lineTo(stars[j].x, stars[j].y);
-            ctx.strokeStyle = `rgba(45, 74, 53, ${0.15 - distance/533})`;
+            // Более яркие линии связи
+            ctx.strokeStyle = `rgba(16, 185, 129, ${0.25 - distance/320})`;
             ctx.lineWidth = 0.8;
             ctx.stroke();
           }
@@ -756,6 +758,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* --- ОБНОВЛЕННЫЙ БЛОК "ИНТЕРАКТИВНАЯ СФЕРА" В СТИЛЕ ГЛУБОКОГО КОСМОСА --- */}
       <section className="py-20 md:py-24 px-4 relative z-10 overflow-hidden bg-[#e4eed8] border-y border-[#d0e5c0]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 md:mb-16">
@@ -767,24 +770,32 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#d0e5c0] shadow-md group bg-white">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#ecf4e3] to-white pointer-events-none z-0"></div>
+          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-[#06140b]">
+
+            <img
+              src="https://images.unsplash.com/photo-1506260408121-e353d10b87c7?q=80&w=2000&auto=format&fit=crop"
+              alt="Milky Way Core"
+              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
+            />
+
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#06140b] via-transparent to-[#06140b]/50 pointer-events-none z-0"></div>
 
             <StarField />
 
             <div className="absolute top-4 left-4 md:top-6 md:left-6 flex items-center gap-2 z-20 pointer-events-none">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse"></div>
-              <div className="text-[8px] md:text-[10px] uppercase tracking-widest text-[#112a1a] font-bold">CORE ACTIVE</div>
+              <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_#10b981]"></div>
+              <div className="text-[8px] md:text-[10px] uppercase tracking-widest text-[#a7f3d0] font-bold">CORE ACTIVE</div>
             </div>
-            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 text-[8px] md:text-[10px] text-[#4a6b52] tracking-widest font-mono pointer-events-none font-bold">
+            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 text-[8px] md:text-[10px] text-[#6ee7b7] tracking-widest font-mono pointer-events-none font-bold">
               COORD: 55°42'29"N 58°57'23"E
             </div>
-            <div className="absolute top-4 right-4 md:top-6 md:right-6 text-[8px] md:text-[10px] text-[#059669] tracking-widest font-mono pointer-events-none font-bold">
+            <div className="absolute top-4 right-4 md:top-6 md:right-6 text-[8px] md:text-[10px] text-[#10b981] tracking-widest font-mono pointer-events-none font-bold">
               MIRA MAY ENGINE
             </div>
           </div>
         </div>
       </section>
+      {/* ---------------------------------------------------------------------- */}
 
       <section id="navigation-grid" className="py-20 md:py-32 px-4 md:px-6 max-w-7xl mx-auto relative z-10 bg-[#ecf4e3]">
         <div className="text-center mb-16 md:mb-24">
