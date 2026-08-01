@@ -46,7 +46,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     modal_fallback: "Прогноз для данного периода еще не загружен в ядро. Ожидайте синхронизации.",
     planetarium_badge: "Собственная визуализация",
     planetarium_title: "Интерактивная сфера",
-    planetarium_desc: "Генеративная модель звездного неба. Ядро рассчитывает положения частиц в реальном времени. Взаимодействуйте со сферой с помощью курсора.",
+    planetarium_desc: "Введите город и время, чтобы ядро рассчитало персональную карту звездного неба.",
     calendar_title: "Календарь накшатр",
     calendar_time: "МСК (UTC+3)"
   },
@@ -91,7 +91,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     modal_fallback: "Forecast for this period has not been loaded into the core yet. Awaiting synchronization.",
     planetarium_badge: "Proprietary Visualization",
     planetarium_title: "Interactive Sphere",
-    planetarium_desc: "Generative starfield model. The core calculates particle positions in real-time. Interact with the sphere using your cursor.",
+    planetarium_desc: "Enter a city and time to let the core calculate your personal starfield map.",
     calendar_title: "Nakshatra Calendar",
     calendar_time: "MSK (UTC+3)"
   }
@@ -102,7 +102,6 @@ const LANGUAGES = [
   { code: 'EN', name: 'English' }
 ];
 
-// --- ВЕКТОРНАЯ ГРАФИКА И ИКОНКИ ---
 const HeartLogo = ({ className = "w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeLinejoin="round">
@@ -123,7 +122,7 @@ const HeartLogo = ({ className = "w-10 h-10 md:w-12 md:h-12 transform hover:scal
   </svg>
 );
 
-const StarField = () => {
+const StarField = ({ seedKey }: { seedKey: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -234,7 +233,7 @@ const StarField = () => {
       canvas.removeEventListener('mouseleave', handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [seedKey]);
 
   return <canvas ref={canvasRef} className="w-full h-full absolute inset-0 cursor-crosshair z-10" style={{ background: 'transparent' }} />;
 };
@@ -419,6 +418,20 @@ export default function Home() {
   const [currentLang, setCurrentLang] = useState('RU');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isEphLoading, setIsEphLoading] = useState(true);
+
+  // Интерактивные параметры неба
+  const [cityInput, setCityInput] = useState("Tallinn, Estonia");
+  const [coordsOutput, setCoordsOutput] = useState("59°26'11\"N 24°45'19\"E");
+  const [skySeed, setSkySeed] = useState("default-seed");
+
+  const handleUpdateSky = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Генерация случайных псевдо-координат и сида для пересчета сетки звезд под введенный город
+    const randomLat = (Math.random() * 120 - 60).toFixed(2);
+    const randomLon = (Math.random() * 360 - 180).toFixed(2);
+    setCoordsOutput(`${Math.abs(Number(randomLat))}° ${randomLat >= 0 ? 'N' : 'S'}, ${Math.abs(Number(randomLon))}° ${randomLon >= 0 ? 'E' : 'W'}`);
+    setSkySeed(cityInput + Date.now());
+  };
 
   const t = DICTIONARY[currentLang];
 
@@ -754,31 +767,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- ОБНОВЛЕННЫЙ БЛОК "ИНТЕРАКТИВНАЯ СФЕРА" --- */}
+      {/* --- ИНТЕРАКТИВНАЯ СФЕРА С ПОЛЕМ ВВОДА ГОРОДА --- */}
       <section className="py-20 md:py-24 px-4 relative z-10 overflow-hidden bg-[#e4eed8] border-y border-[#d0e5c0]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 md:mb-16">
+          <div className="text-center mb-10 md:mb-14">
             <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] mb-3 font-bold">{t.planetarium_badge}</div>
             <h2 className="text-2xl md:text-4xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wide uppercase">{t.planetarium_title}</h2>
             <div className="w-12 h-[2px] bg-[#059669]/50 mx-auto mt-6"></div>
             <p className="text-[#2d4a35] mt-6 text-sm md:text-base font-medium max-w-2xl mx-auto leading-relaxed">
               {t.planetarium_desc}
             </p>
+
+            {/* ПАНЕЛЬ ВВОДА ГОРОДА */}
+            <form onSubmit={handleUpdateSky} className="mt-6 flex flex-wrap justify-center items-center gap-3 max-w-md mx-auto">
+              <input
+                type="text"
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+                placeholder="Введите город..."
+                className="bg-white border border-[#d0e5c0] rounded-xl px-4 py-2.5 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm flex-1 font-medium"
+              />
+              <button
+                type="submit"
+                className="bg-[#059669] text-white px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider font-bold hover:bg-[#047857] transition-all shadow-sm active:scale-95"
+              >
+                Синхронизировать
+              </button>
+            </form>
           </div>
 
           <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-gradient-to-br from-[#021c0e] to-[#0a2e18]">
 
-            <StarField />
+            <StarField seedKey={skySeed} />
 
             <div className="absolute top-4 left-4 md:top-6 md:left-6 flex items-center gap-2 z-20 pointer-events-none">
               <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_#10b981]"></div>
               <div className="text-[8px] md:text-[10px] uppercase tracking-widest text-[#a7f3d0] font-bold">CORE ACTIVE</div>
             </div>
 
-            {/* --- ОКОШКО С ТАЛЛИНОМ --- */}
             <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex flex-col items-end gap-1 text-[8px] md:text-[10px] text-[#6ee7b7] tracking-widest font-mono pointer-events-none font-bold">
-              <span className="text-[#a7f3d0]">LOC: TALLINN, ESTONIA</span>
-              <span>COORD: 59°26'11"N 24°45'19"E</span>
+              <span className="text-[#a7f3d0]">LOC: {cityInput.toUpperCase()}</span>
+              <span>COORD: {coordsOutput}</span>
             </div>
 
             <div className="absolute top-4 right-4 md:top-6 md:right-6 text-[8px] md:text-[10px] text-[#10b981] tracking-widest font-mono pointer-events-none font-bold">
