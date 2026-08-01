@@ -46,7 +46,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     modal_fallback: "Прогноз для данного периода еще не загружен в ядро. Ожидайте синхронизации.",
     planetarium_badge: "Собственная визуализация",
     planetarium_title: "Интерактивная сфера",
-    planetarium_desc: "Введите город и время, чтобы ядро рассчитало персональную карту звездного неба.",
+    planetarium_desc: "Введите город и год рождения, чтобы ядро рассчитало карту звездного неба в тот момент.",
     calendar_title: "Календарь накшатр",
     calendar_time: "МСК (UTC+3)"
   },
@@ -91,7 +91,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     modal_fallback: "Forecast for this period has not been loaded into the core yet. Awaiting synchronization.",
     planetarium_badge: "Proprietary Visualization",
     planetarium_title: "Interactive Sphere",
-    planetarium_desc: "Enter a city and time to let the core calculate your personal starfield map.",
+    planetarium_desc: "Enter a city and birth year to let the core calculate the starfield map at that moment.",
     calendar_title: "Nakshatra Calendar",
     calendar_time: "MSK (UTC+3)"
   }
@@ -263,7 +263,6 @@ const Icons = {
   ),
 };
 
-// --- ДИНАМИЧЕСКИЙ КОМПОНЕНТ КАЛЕНДАРЯ ---
 const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: any }) => {
   const [date, setDate] = useState(new Date());
   const [dbData, setDbData] = useState<Record<string, any>>({});
@@ -419,18 +418,18 @@ export default function Home() {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isEphLoading, setIsEphLoading] = useState(true);
 
-  // Интерактивные параметры неба
+  // Параметры интерактивного неба с поддержкой года рождения
   const [cityInput, setCityInput] = useState("Tallinn, Estonia");
+  const [yearInput, setYearInput] = useState("2005");
   const [coordsOutput, setCoordsOutput] = useState("59°26'11\"N 24°45'19\"E");
   const [skySeed, setSkySeed] = useState("default-seed");
 
   const handleUpdateSky = (e: React.FormEvent) => {
     e.preventDefault();
-    // Генерация случайных псевдо-координат и сида для пересчета сетки звезд под введенный город
     const randomLat = (Math.random() * 120 - 60).toFixed(2);
     const randomLon = (Math.random() * 360 - 180).toFixed(2);
     setCoordsOutput(`${Math.abs(Number(randomLat))}° ${randomLat >= 0 ? 'N' : 'S'}, ${Math.abs(Number(randomLon))}° ${randomLon >= 0 ? 'E' : 'W'}`);
-    setSkySeed(cityInput + Date.now());
+    setSkySeed(cityInput + yearInput + Date.now());
   };
 
   const t = DICTIONARY[currentLang];
@@ -744,7 +743,7 @@ export default function Home() {
             <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full p-2 border border-[#059669]/30 relative order-1 lg:order-2 flex-shrink-0 shadow-lg bg-white">
               <div className="absolute inset-0 rounded-full border border-[#059669]/20 animate-[spin_10s_linear_infinite]" style={{ margin: '-10px' }}></div>
               <img
-                src="/images/gulmira2.jpg"
+                src="/imsges/gulmira2.jpg"
                 alt="Arina Nature"
                 className="w-full h-full object-cover rounded-full"
               />
@@ -767,7 +766,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- ИНТЕРАКТИВНАЯ СФЕРА С ПОЛЕМ ВВОДА ГОРОДА --- */}
+      {/* --- ИНТЕРАКТИВНАЯ СФЕРА С ПОЛЕМ ГОРОДА И ГОДА --- */}
       <section className="py-20 md:py-24 px-4 relative z-10 overflow-hidden bg-[#e4eed8] border-y border-[#d0e5c0]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10 md:mb-14">
@@ -778,14 +777,21 @@ export default function Home() {
               {t.planetarium_desc}
             </p>
 
-            {/* ПАНЕЛЬ ВВОДА ГОРОДА */}
-            <form onSubmit={handleUpdateSky} className="mt-6 flex flex-wrap justify-center items-center gap-3 max-w-md mx-auto">
+            {/* ПАНЕЛЬ ВВОДА ГОРОДА И ГОДА */}
+            <form onSubmit={handleUpdateSky} className="mt-6 flex flex-wrap justify-center items-center gap-3 max-w-lg mx-auto">
               <input
                 type="text"
                 value={cityInput}
                 onChange={(e) => setCityInput(e.target.value)}
-                placeholder="Введите город..."
+                placeholder="Город..."
                 className="bg-white border border-[#d0e5c0] rounded-xl px-4 py-2.5 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm flex-1 font-medium"
+              />
+              <input
+                type="text"
+                value={yearInput}
+                onChange={(e) => setYearInput(e.target.value)}
+                placeholder="Год (например, 2005)"
+                className="bg-white border border-[#d0e5c0] rounded-xl px-4 py-2.5 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-36 font-medium text-center"
               />
               <button
                 type="submit"
@@ -806,7 +812,7 @@ export default function Home() {
             </div>
 
             <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex flex-col items-end gap-1 text-[8px] md:text-[10px] text-[#6ee7b7] tracking-widest font-mono pointer-events-none font-bold">
-              <span className="text-[#a7f3d0]">LOC: {cityInput.toUpperCase()}</span>
+              <span className="text-[#a7f3d0]">LOC: {cityInput.toUpperCase()} ({yearInput})</span>
               <span>COORD: {coordsOutput}</span>
             </div>
 
