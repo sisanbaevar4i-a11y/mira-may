@@ -9,16 +9,13 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     toc: "Оглавление",
     read_more: "Следующие материалы",
     all_articles: "Вся библиотека",
+    library_title: "Библиотека знаний",
+    library_subtitle: "Исследуйте мудрость ведической астрологии, космические циклы и принципы гармонии.",
     tabs: [
       { id: "nakshatras", name: "Накшатры" },
       { id: "horoscopes", name: "Гороскопы личностей" },
       { id: "ayurveda", name: "Аюрведа" }
     ],
-    sectionsList: {
-      nakshatras: "Накшатры",
-      horoscopes: "Гороскопы известных личностей",
-      ayurveda: "Аюрведа"
-    },
     articles: {
       nakshatras: [
         {
@@ -188,16 +185,13 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     toc: "Table of Contents",
     read_more: "Next Materials",
     all_articles: "Full Library",
+    library_title: "Knowledge Library",
+    library_subtitle: "Explore the wisdom of Vedic astrology, cosmic cycles, and harmony principles.",
     tabs: [
       { id: "nakshatras", name: "Nakshatras" },
       { id: "horoscopes", name: "Famous Horoscopes" },
       { id: "ayurveda", name: "Ayurveda" }
     ],
-    sectionsList: {
-      nakshatras: "Nakshatras",
-      horoscopes: "Famous Personalities Horoscopes",
-      ayurveda: "Ayurveda"
-    },
     articles: {
       nakshatras: [
         {
@@ -399,7 +393,7 @@ export default function ArticlesPage() {
   const [currentLang, setCurrentLang] = useState('RU');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('nakshatras');
-  const [selectedArticleId, setSelectedArticleId] = useState<string | null>('swati');
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null); // ИЗМЕНЕНО: по умолчанию null для отображения главного каталога
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -414,7 +408,7 @@ export default function ArticlesPage() {
     setIsLangOpen(false);
   };
 
-  const t = LIBRARY_DATA[currentLang];
+  const t = DICTIONARY[currentLang];
   const articleData = t.article;
 
   const scrollToSection = (id: string) => {
@@ -478,7 +472,7 @@ export default function ArticlesPage() {
         </div>
       </header>
 
-      {/* ОТОБРАЖЕНИЕ КАТАЛОГА ИЛИ СТАТЬИ С ВКЛАДКАМИ РАЗДЕЛОВ НА ГЛАВНОЙ СТРАНИЦЕ БИБЛИОТЕКИ */}
+      {/* КАТАЛОГ С РАЗДЕЛАМИ ИЛИ ПРОСМОТР СТАТЬИ */}
       {!selectedArticleId ? (
         <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-16">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -490,7 +484,7 @@ export default function ArticlesPage() {
             </p>
           </div>
 
-          {/* ТРИ РАЗДЕЛА (ВКЛАДКИ) */}
+          {/* ВКЛАДКИ РАЗДЕЛОВ */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
             {t.tabs.map((tab: any) => (
               <button
@@ -507,7 +501,7 @@ export default function ArticlesPage() {
             ))}
           </div>
 
-          {/* СПИСОК СТАТЕЙ В АКТИВНОМ РАЗДЕЛЕ */}
+          {/* СЕТКА МАТЕРИАЛОВ ВЫБРАННОГО РАЗДЕЛА */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {t.articles[activeTab]?.map((art: any) => (
               <div
