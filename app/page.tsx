@@ -644,7 +644,7 @@ export default function Home() {
       <div className="relative w-full py-16 md:py-32 flex flex-col items-center justify-center overflow-hidden text-center px-4 bg-[#0a1f14]">
 
         <img
-          src="/hero-bg.jpg"
+          src="/images/hero-bg2.jpg"
           alt="Aurora Header"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -733,7 +733,7 @@ export default function Home() {
             <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full p-2 border border-[#059669]/30 relative order-1 lg:order-2 flex-shrink-0 shadow-lg bg-white">
               <div className="absolute inset-0 rounded-full border border-[#059669]/20 animate-[spin_10s_linear_infinite]" style={{ margin: '-10px' }}></div>
               <img
-                src="/why-image.jpg"
+                src="/images/gulmira2.jpg"
                 alt="Arina Nature"
                 className="w-full h-full object-cover rounded-full"
               />
