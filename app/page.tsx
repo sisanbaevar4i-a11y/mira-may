@@ -754,6 +754,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* --- ОБНОВЛЕННЫЙ БЛОК "ИНТЕРАКТИВНАЯ СФЕРА" --- */}
       <section className="py-20 md:py-24 px-4 relative z-10 overflow-hidden bg-[#e4eed8] border-y border-[#d0e5c0]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 md:mb-16">
@@ -765,15 +766,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-[#020b06]">
-
-            <img
-              src="/galaxy-bg.jpg"
-              alt="Milky Way Core"
-              className="absolute inset-0 w-full h-full object-cover opacity-60"
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#020b06] via-transparent to-[#020b06]/50 pointer-events-none z-0"></div>
+          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-gradient-to-br from-[#021c0e] to-[#0a2e18]">
 
             <StarField />
 
@@ -781,15 +774,20 @@ export default function Home() {
               <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_8px_#10b981]"></div>
               <div className="text-[8px] md:text-[10px] uppercase tracking-widest text-[#a7f3d0] font-bold">CORE ACTIVE</div>
             </div>
-            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 text-[8px] md:text-[10px] text-[#6ee7b7] tracking-widest font-mono pointer-events-none font-bold">
-              COORD: 55°42'29"N 58°57'23"E
+
+            {/* --- ОКОШКО С ТАЛЛИНОМ --- */}
+            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex flex-col items-end gap-1 text-[8px] md:text-[10px] text-[#6ee7b7] tracking-widest font-mono pointer-events-none font-bold">
+              <span className="text-[#a7f3d0]">LOC: TALLINN, ESTONIA</span>
+              <span>COORD: 59°26'11"N 24°45'19"E</span>
             </div>
+
             <div className="absolute top-4 right-4 md:top-6 md:right-6 text-[8px] md:text-[10px] text-[#10b981] tracking-widest font-mono pointer-events-none font-bold">
               MIRA MAY ENGINE
             </div>
           </div>
         </div>
       </section>
+      {/* ---------------------------------------------------------------------- */}
 
       <section id="navigation-grid" className="py-20 md:py-32 px-4 md:px-6 max-w-7xl mx-auto relative z-10 bg-[#ecf4e3]">
         <div className="text-center mb-16 md:mb-24">
