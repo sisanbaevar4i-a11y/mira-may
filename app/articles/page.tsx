@@ -8,7 +8,7 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     back: "Библиотека знаний",
     toc: "Оглавление",
     category: "Астрология / Накшатры",
-    read_more: "Следующие манускрипты",
+    read_more: "Следующие материалы",
     all_articles: "Вся библиотека",
     article: {
       title: "Накшатра Свати: Энергия Свободы, Ветра и Звезды Арктур",
@@ -137,7 +137,7 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     back: "Knowledge Library",
     toc: "Table of Contents",
     category: "Astrology / Nakshatras",
-    read_more: "Next Manuscripts",
+    read_more: "Next Materials",
     all_articles: "Full Library",
     article: {
       title: "Swati Nakshatra: Energy of Freedom, Wind, and Arcturus",
@@ -304,7 +304,6 @@ export default function ArticlesPage() {
   const [currentLang, setCurrentLang] = useState('RU');
   const [isLangOpen, setIsLangOpen] = useState(false);
 
-  // ИНИЦИАЛИЗАЦИЯ ГЛОБАЛЬНОЙ ПАМЯТИ
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedLang = localStorage.getItem('mira_lang');
@@ -356,10 +355,7 @@ export default function ArticlesPage() {
 
       {isLangOpen && <div className="fixed inset-0 z-40" onClick={() => setIsLangOpen(false)} />}
 
-      {/* Шапка */}
       <header className="sticky top-0 z-50 w-full bg-[#ecf4e3]/90 backdrop-blur-xl border-b border-[#d0e5c0] px-4 md:px-8 py-3 flex items-center justify-between shadow-sm">
-
-        {/* Кнопка "Назад" */}
         <div className="flex items-center gap-4">
           <a href="/" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-[#d0e5c0] flex items-center justify-center text-[#4a6b52] hover:bg-[#059669] hover:text-white hover:border-[#059669] transition-all shadow-sm">
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -367,7 +363,6 @@ export default function ArticlesPage() {
           <span className="text-[11px] sm:text-xs tracking-[0.2em] uppercase font-bold text-[#4a6b52] hidden sm:block">{t.back}</span>
         </div>
 
-        {/* Правый блок: Переключатель языка + Логотип */}
         <div className="flex items-center gap-6">
           <div className="relative">
             <button
@@ -404,8 +399,6 @@ export default function ArticlesPage() {
       </header>
 
       <main className="max-w-[1300px] mx-auto flex flex-col lg:flex-row items-start pt-8 sm:pt-12 md:pt-16 px-4 md:px-8 pb-24 gap-8 lg:gap-16">
-
-        {/* Оглавление (Слева) */}
         <aside className="hidden lg:block w-72 sticky top-28 flex-shrink-0">
           <div className="text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-4">{t.toc}</div>
           <nav className="flex flex-col gap-3.5 border-l border-[#d0e5c0] pl-4">
@@ -421,9 +414,7 @@ export default function ArticlesPage() {
           </nav>
         </aside>
 
-        {/* Контент статьи */}
         <article className="flex-1 w-full max-w-3xl mx-auto lg:mx-0">
-
           <header className="mb-10 sm:mb-14">
             <div className="inline-block px-3 py-1 mb-4 rounded-full border border-[#059669]/20 bg-[#059669]/10 text-[#059669] text-[9px] sm:text-xs uppercase tracking-widest font-bold">
               {t.category}
@@ -446,7 +437,6 @@ export default function ArticlesPage() {
             ))}
           </div>
 
-          {/* Блок "Продолжить чтение" */}
           <section className="mt-20 pt-12 border-t border-[#d0e5c0]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-3">
               <h3 className="text-lg sm:text-xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wider">
@@ -468,10 +458,8 @@ export default function ArticlesPage() {
               ))}
             </div>
           </section>
-
         </article>
       </main>
-
     </div>
   );
 }
