@@ -32,10 +32,8 @@ export default function AdminDashboard() {
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [retrogrades, setRetrogrades] = useState<any[]>([]);
 
-  // Двухслотовый словарь накшатр
   const [nakshatrasMap, setNakshatrasMap] = useState<Record<string, NakshatraDay>>({});
 
-  // Состояние для выбора даты
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -56,10 +54,21 @@ export default function AdminDashboard() {
   async function fetchData() {
     setIsLoading(true);
 
+    // ОПТИМИЗАЦИЯ ЗАПРОСА: Вычисляем границы текущего месяца
+    const y = currentYear;
+    const m = String(currentMonth + 1).padStart(2, '0');
+    const lastDay = new Date(y, currentMonth + 1, 0).getDate();
+    const startDate = `${y}-${m}-01`;
+    const endDate = `${y}-${m}-${lastDay}`;
+
     const [resContent, resRetro, resNak] = await Promise.all([
       supabase.from('site_content').select('*').order('section', { ascending: true }),
       supabase.from('retrogrades').select('*').order('sort_order', { ascending: true }),
-      supabase.from('nakshatras').select('*')
+      // Выгружаем данные строго за 1 месяц, обходя лимит в 1000 строк
+      supabase.from('nakshatras')
+        .select('*')
+        .gte('calendar_date', startDate)
+        .lte('calendar_date', endDate)
     ]);
 
     if (resContent.data) setContentItems(resContent.data);
@@ -181,7 +190,14 @@ export default function AdminDashboard() {
           const dateStr = `${currentYear}-${monthFormatted}-${dayFormatted}`;
           const cellData = nakshatrasMap[dateStr];
 
-          if (!cellData || (!cellData.text_ru_1 && !cellData.text_ru_2 && !cellData.time_ru_1 && !cellData.time_ru_2 && !cellData.text_en_1 && !cellData.text_en_2)) continue;
+          // Если слот полностью пустой, но в базе он был, удаляем его
+          if (!cellData || (!cellData.text_ru_1 && !cellData.text_ru_2 && !cellData.time_ru_1 && !cellData.time_ru_2 && !cellData.text_en_1 && !cellData.text_en_2)) {
+            if (cellData && cellData.id) {
+              const { error } = await supabase.from('nakshatras').delete().eq('id', cellData.id);
+              if (error) hasError = true;
+            }
+            continue;
+          }
 
           const dbData = {
             calendar_date: dateStr,
@@ -250,7 +266,6 @@ export default function AdminDashboard() {
         }
       `}} />
 
-      {/* Изменен верхний отступ (pt-12) для исправления перекрытия статус-бара iOS */}
       <div className="max-w-[1600px] mx-auto p-4 pt-12 md:p-8">
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#080a0f]/85 backdrop-blur-xl border border-gray-800/80 p-6 md:p-8 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)]">
           <div className="flex items-center gap-4">
