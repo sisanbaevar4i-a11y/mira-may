@@ -718,7 +718,7 @@ export default function Home() {
             <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full p-2 border border-[#059669]/30 relative order-1 lg:order-2 flex-shrink-0 shadow-lg bg-white">
               <div className="absolute inset-0 rounded-full border border-[#059669]/20 animate-[spin_10s_linear_infinite]" style={{ margin: '-10px' }}></div>
               <img
-                src="/gulmira2.jpg"
+                src="/images/gulmira2.jpg"
                 alt="Meditation & Focus"
                 className="w-full h-full object-cover rounded-full mix-blend-multiply opacity-80"
               />
