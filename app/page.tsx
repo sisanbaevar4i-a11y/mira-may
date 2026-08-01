@@ -9,7 +9,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     nav_forecasts: "Прогнозы",
     nav_nakshatra: "Календарь накшатр",
     nav_retrograde: "Ретроградные планеты",
-    nav_learn: "Статьи по астрологии",
+    nav_learn: "Статьи",
     hero_badge: "Космические ориентиры судьбы",
     hero_title_1: "Твой личный",
     hero_title_vector: "вектор",
@@ -54,7 +54,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     nav_forecasts: "Forecasts",
     nav_nakshatra: "Nakshatra Calendar",
     nav_retrograde: "Retrograde Planets",
-    nav_learn: "Astrology Articles",
+    nav_learn: "Articles",
     hero_badge: "Cosmic destiny guides",
     hero_title_1: "Your personal",
     hero_title_vector: "vector",
@@ -185,7 +185,6 @@ const StarField = () => {
 
         ctx.beginPath();
         ctx.arc(star.x + offsetX, star.y + offsetY, star.radius, 0, Math.PI * 2);
-        // Усиленная яркость частиц для темного фона Млечного пути
         ctx.fillStyle = `rgba(16, 185, 129, ${star.alpha})`;
         ctx.fill();
       });
@@ -200,8 +199,7 @@ const StarField = () => {
             ctx.beginPath();
             ctx.moveTo(stars[i].x, stars[i].y);
             ctx.lineTo(stars[j].x, stars[j].y);
-            // Более яркие линии связи
-            ctx.strokeStyle = `rgba(16, 185, 129, ${0.25 - distance/320})`;
+            ctx.strokeStyle = `rgba(16, 185, 129, ${0.3 - distance/260})`;
             ctx.lineWidth = 0.8;
             ctx.stroke();
           }
@@ -336,7 +334,6 @@ const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: 
     <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10 flex flex-col">
       <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative shrink-0">
 
-        {/* Интегрированный логотип MIRA MAY */}
         <div className="hidden md:flex items-center gap-2 text-sm md:text-lg font-['Cinzel',serif] font-bold tracking-[0.2em] text-[#112a1a] select-none">
           <HeartLogo className="w-7 h-7 md:w-9 md:h-9 transform hover:scale-105 transition-transform duration-500 drop-shadow-sm flex-shrink-0" />
           <span className="whitespace-nowrap">MIRA <span className="text-[#059669]">MAY</span></span>
@@ -490,7 +487,6 @@ export default function Home() {
     const isRU = currentLang === 'RU';
     const tableContent = (
       <div className="flex flex-col gap-4 w-full">
-        {/* Интегрированный логотип MIRA MAY над таблицей */}
         <div className="bg-[#ecf4e3] border border-[#d0e5c0] rounded-xl py-3 px-4 md:px-5 flex justify-between items-center shadow-sm shrink-0">
           <div className="flex items-center gap-2 text-sm md:text-lg font-['Cinzel',serif] font-bold tracking-[0.2em] text-[#112a1a] select-none">
             <HeartLogo className="w-7 h-7 md:w-9 md:h-9 transform hover:scale-105 transition-transform duration-500 drop-shadow-sm flex-shrink-0" />
@@ -758,7 +754,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- ОБНОВЛЕННЫЙ БЛОК "ИНТЕРАКТИВНАЯ СФЕРА" В СТИЛЕ ГЛУБОКОГО КОСМОСА --- */}
       <section className="py-20 md:py-24 px-4 relative z-10 overflow-hidden bg-[#e4eed8] border-y border-[#d0e5c0]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 md:mb-16">
@@ -770,15 +765,15 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-[#06140b]">
+          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-[#020b06]">
 
             <img
-              src="https://images.unsplash.com/photo-1506260408121-e353d10b87c7?q=80&w=2000&auto=format&fit=crop"
+              src="/galaxy-bg.jpg"
               alt="Milky Way Core"
-              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#06140b] via-transparent to-[#06140b]/50 pointer-events-none z-0"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#020b06] via-transparent to-[#020b06]/50 pointer-events-none z-0"></div>
 
             <StarField />
 
@@ -795,7 +790,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* ---------------------------------------------------------------------- */}
 
       <section id="navigation-grid" className="py-20 md:py-32 px-4 md:px-6 max-w-7xl mx-auto relative z-10 bg-[#ecf4e3]">
         <div className="text-center mb-16 md:mb-24">
