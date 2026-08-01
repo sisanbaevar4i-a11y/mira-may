@@ -626,7 +626,7 @@ export default function Home() {
 
         {/* Картинка на 100% непрозрачности, кристально чистая */}
         <img
-          src="/hero-bg.jpg"
+          src="/images/hero-bg2.jpg"
           alt="Aurora Header"
           className="absolute inset-0 w-full h-full object-cover"
         />
