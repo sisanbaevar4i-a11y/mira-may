@@ -102,151 +102,9 @@ const LANGUAGES = [
   { code: 'EN', name: 'English' }
 ];
 
-const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: any }) => {
-  const [date, setDate] = useState(new Date());
-  const [dbData, setDbData] = useState<Record<string, any>>({});
-  const [isLoading, setIsLoading] = useState(false);
-
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  const monthsRU = ['ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ', 'ИЮЛЬ', 'АВГУСТ', 'СЕНТЯБРЬ', 'ОКТЯБРЬ', 'НОЯБРЬ', 'ДЕКАБРЬ'];
-  const monthsEN = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-  const monthName = currentLang === 'RU' ? monthsRU[month] : monthsEN[month];
-  const daysOfWeek = currentLang === 'RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-  useEffect(() => {
-    async function fetchMonth() {
-      setIsLoading(true);
-      const y = year;
-      const m = String(month + 1).padStart(2, '0');
-
-      const lastDay = new Date(y, month + 1, 0).getDate();
-      const startDate = `${y}-${m}-01`;
-      const endDate = `${y}-${m}-${lastDay}`;
-
-      const { data, error } = await supabase
-        .from('nakshatras')
-        .select('*')
-        .gte('calendar_date', startDate)
-        .lte('calendar_date', endDate);
-
-      if (error) {
-        console.error("Системный сбой при запросе матриц накшатр:", error);
-      }
-
-      const map: Record<string, any> = {};
-      if (data) {
-        data.forEach(item => {
-          const dKey = item.calendar_date.split('T')[0];
-          map[dKey] = item;
-        });
-      }
-      setDbData(map);
-      setIsLoading(false);
-    }
-    fetchMonth();
-  }, [year, month]);
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  let firstDayOfWeek = new Date(year, month, 1).getDay();
-  const adjustedFirstDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
-
-  const cells = [];
-  const prevMonthDays = new Date(year, month, 0).getDate();
-  for (let i = 0; i < adjustedFirstDay; i++) {
-    cells.push({ isEmpty: true, day: prevMonthDays - adjustedFirstDay + i + 1 });
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dStr = String(d).padStart(2, '0');
-    const mStr = String(month + 1).padStart(2, '0');
-    cells.push({ isEmpty: false, day: d, dateKey: `${year}-${mStr}-${dStr}` });
-  }
-  let nextMonthDay = 1;
-  while (cells.length % 7 !== 0) {
-    cells.push({ isEmpty: true, day: nextMonthDay++ });
-  }
-
-  return (
-    <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10 flex flex-col">
-      <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative shrink-0">
-        <h4 className="hidden md:block text-sm md:text-xl font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase opacity-0 select-none">SPACER</h4>
-
-        <div className="flex items-center justify-between md:justify-center gap-4 bg-white px-2 py-1.5 rounded-xl border border-[#d0e5c0] shadow-sm w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2">
-           <button onClick={() => setDate(new Date(year, month - 1, 1))} className="text-[#059669] hover:text-[#112a1a] p-2 px-4 font-bold transition-colors text-lg active:scale-95">&larr;</button>
-           <div className="flex flex-col items-center min-w-[120px]">
-             <h4 className="text-sm md:text-lg font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase select-none">
-               {monthName} {year}
-             </h4>
-             {isLoading && <span className="text-[9px] text-[#059669] animate-pulse uppercase font-bold tracking-widest absolute -bottom-4">Синхронизация...</span>}
-           </div>
-           <button onClick={() => setDate(new Date(year, month + 1, 1))} className="text-[#059669] hover:text-[#112a1a] p-2 px-4 font-bold transition-colors text-lg active:scale-95">&rarr;</button>
-        </div>
-
-        <div className="text-[10px] md:text-sm text-[#059669] uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-[#d0e5c0] font-bold">
-          {t.calendar_time}
-        </div>
-      </div>
-
-      <div className="w-full overflow-x-auto custom-scrollbar pb-2">
-        <div className="min-w-[768px] w-full flex flex-col">
-          <div className="grid grid-cols-7 bg-[#e4eed8]">
-            {daysOfWeek.map((d, i) => (
-              <div key={d} className={`py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
-                {d}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
-            {cells.map((cell, index) => {
-              const isRu = currentLang === 'RU';
-              let slot1 = '';
-              let slot2 = '';
-
-              if (!cell.isEmpty && cell.dateKey && dbData[cell.dateKey]) {
-                const row = dbData[cell.dateKey];
-                const times = (isRu ? row.nak_time_ru : row.nak_time_en)?.split('|') || [];
-                const texts = (isRu ? row.data_ru : row.data_en)?.split('|') || [];
-
-                const formatSlot = (text: string, time: string) => text ? `${text} \n${time ? `(с ${time})` : ''}`.trim() : '';
-                const formatSlotEN = (text: string, time: string) => text ? `${text} \n${time ? `(at ${time})` : ''}`.trim() : '';
-
-                slot1 = isRu ? formatSlot(texts[0], times[0]) : formatSlotEN(texts[0], times[0]);
-                slot2 = isRu ? formatSlot(texts[1], times[1]) : formatSlotEN(texts[1], times[1]);
-              }
-
-              return (
-                <div key={index} className={`min-h-[120px] md:min-h-[140px] p-2 md:p-3 border-b border-r border-[#d0e5c0] flex flex-col transition-colors ${!cell.isEmpty ? 'bg-white hover:bg-[#ecf4e3]' : 'bg-[#ecf4e3]/30 opacity-60'} ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
-                  <div className={`text-right text-sm md:text-base font-bold mb-2 ${!cell.isEmpty ? ((index % 7 > 4) ? 'text-[#059669]' : 'text-[#112a1a]') : 'text-[#4a6b52]'}`}>
-                    {cell.day}
-                  </div>
-
-                  {!cell.isEmpty && (slot1 || slot2) && (
-                    <div className="mt-auto flex flex-col gap-2">
-                      {slot1 && (
-                        <div className="text-[10px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-2 rounded border border-[#d0e5c0]">
-                          {slot1}
-                        </div>
-                      )}
-                      {slot2 && (
-                        <div className="text-[10px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-2 rounded border border-[#059669]/30">
-                          {slot2}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const HeartLogo = () => (
-  <svg className="w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+// --- ВЕКТОРНАЯ ГРАФИКА И ИКОНКИ ---
+const HeartLogo = ({ className = "w-10 h-10 md:w-12 md:h-12 transform hover:scale-105 transition-transform duration-500 drop-shadow-lg flex-shrink-0" }) => (
+  <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeLinejoin="round">
       <polygon points="50,38 35,28 25,45 50,70 75,45 65,28" fill="#059669" />
       <polygon points="50,25 38,12 35,28 50,38" fill="#047857" />
@@ -406,6 +264,155 @@ const Icons = {
   ),
 };
 
+// --- ДИНАМИЧЕСКИЙ КОМПОНЕНТ КАЛЕНДАРЯ ---
+const DynamicNakshatraCalendar = ({ currentLang, t }: { currentLang: string, t: any }) => {
+  const [date, setDate] = useState(new Date());
+  const [dbData, setDbData] = useState<Record<string, any>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const monthsRU = ['ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ', 'ИЮЛЬ', 'АВГУСТ', 'СЕНТЯБРЬ', 'ОКТЯБРЬ', 'НОЯБРЬ', 'ДЕКАБРЬ'];
+  const monthsEN = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+  const monthName = currentLang === 'RU' ? monthsRU[month] : monthsEN[month];
+  const daysOfWeek = currentLang === 'RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  useEffect(() => {
+    async function fetchMonth() {
+      setIsLoading(true);
+      const y = year;
+      const m = String(month + 1).padStart(2, '0');
+
+      const lastDay = new Date(y, month + 1, 0).getDate();
+      const startDate = `${y}-${m}-01`;
+      const endDate = `${y}-${m}-${lastDay}`;
+
+      const { data, error } = await supabase
+        .from('nakshatras')
+        .select('*')
+        .gte('calendar_date', startDate)
+        .lte('calendar_date', endDate);
+
+      if (error) {
+        console.error("Системный сбой при запросе матриц накшатр:", error);
+      }
+
+      const map: Record<string, any> = {};
+      if (data) {
+        data.forEach(item => {
+          const dKey = item.calendar_date.split('T')[0];
+          map[dKey] = item;
+        });
+      }
+      setDbData(map);
+      setIsLoading(false);
+    }
+    fetchMonth();
+  }, [year, month]);
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let firstDayOfWeek = new Date(year, month, 1).getDay();
+  const adjustedFirstDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+  const cells = [];
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  for (let i = 0; i < adjustedFirstDay; i++) {
+    cells.push({ isEmpty: true, day: prevMonthDays - adjustedFirstDay + i + 1 });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dStr = String(d).padStart(2, '0');
+    const mStr = String(month + 1).padStart(2, '0');
+    cells.push({ isEmpty: false, day: d, dateKey: `${year}-${mStr}-${dStr}` });
+  }
+  let nextMonthDay = 1;
+  while (cells.length % 7 !== 0) {
+    cells.push({ isEmpty: true, day: nextMonthDay++ });
+  }
+
+  return (
+    <div className="w-full bg-white border border-[#d0e5c0] rounded-xl overflow-hidden mt-4 shadow-sm relative z-10 flex flex-col">
+      <div className="bg-[#ecf4e3] border-b border-[#d0e5c0] py-4 px-4 md:px-5 flex flex-col md:flex-row gap-4 justify-between items-center relative shrink-0">
+
+        {/* Интегрированный логотип MIRA MAY */}
+        <div className="hidden md:flex items-center gap-2 text-sm md:text-lg font-['Cinzel',serif] font-bold tracking-[0.2em] text-[#112a1a] select-none">
+          <HeartLogo className="w-7 h-7 md:w-9 md:h-9 transform hover:scale-105 transition-transform duration-500 drop-shadow-sm flex-shrink-0" />
+          <span className="whitespace-nowrap">MIRA <span className="text-[#059669]">MAY</span></span>
+        </div>
+
+        <div className="flex items-center justify-between md:justify-center gap-4 bg-white px-2 py-1.5 rounded-xl border border-[#d0e5c0] shadow-sm w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2">
+           <button onClick={() => setDate(new Date(year, month - 1, 1))} className="text-[#059669] hover:text-[#112a1a] p-2 px-4 font-bold transition-colors text-lg active:scale-95">&larr;</button>
+           <div className="flex flex-col items-center min-w-[120px]">
+             <h4 className="text-sm md:text-lg font-bold font-['Cinzel',serif] text-[#112a1a] tracking-widest uppercase select-none">
+               {monthName} {year}
+             </h4>
+             {isLoading && <span className="text-[9px] text-[#059669] animate-pulse uppercase font-bold tracking-widest absolute -bottom-4">Синхронизация...</span>}
+           </div>
+           <button onClick={() => setDate(new Date(year, month + 1, 1))} className="text-[#059669] hover:text-[#112a1a] p-2 px-4 font-bold transition-colors text-lg active:scale-95">&rarr;</button>
+        </div>
+
+        <div className="text-[10px] md:text-sm text-[#059669] uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-[#d0e5c0] font-bold md:ml-auto">
+          {t.calendar_time}
+        </div>
+      </div>
+
+      <div className="w-full overflow-x-auto custom-scrollbar pb-2">
+        <div className="min-w-[768px] w-full flex flex-col">
+          <div className="grid grid-cols-7 bg-[#e4eed8]">
+            {daysOfWeek.map((d, i) => (
+              <div key={d} className={`py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider border-b border-[#d0e5c0] ${i > 4 ? 'text-[#059669]' : 'text-[#4a6b52]'}`}>
+                {d}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 bg-[#ecf4e3]/50">
+            {cells.map((cell, index) => {
+              const isRu = currentLang === 'RU';
+              let slot1 = '';
+              let slot2 = '';
+
+              if (!cell.isEmpty && cell.dateKey && dbData[cell.dateKey]) {
+                const row = dbData[cell.dateKey];
+                const times = (isRu ? row.nak_time_ru : row.nak_time_en)?.split('|') || [];
+                const texts = (isRu ? row.data_ru : row.data_en)?.split('|') || [];
+
+                const formatSlot = (text: string, time: string) => text ? `${text} \n${time ? `(с ${time})` : ''}`.trim() : '';
+                const formatSlotEN = (text: string, time: string) => text ? `${text} \n${time ? `(at ${time})` : ''}`.trim() : '';
+
+                slot1 = isRu ? formatSlot(texts[0], times[0]) : formatSlotEN(texts[0], times[0]);
+                slot2 = isRu ? formatSlot(texts[1], times[1]) : formatSlotEN(texts[1], times[1]);
+              }
+
+              return (
+                <div key={index} className={`min-h-[120px] md:min-h-[140px] p-2 md:p-3 border-b border-r border-[#d0e5c0] flex flex-col transition-colors ${!cell.isEmpty ? 'bg-white hover:bg-[#ecf4e3]' : 'bg-[#ecf4e3]/30 opacity-60'} ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
+                  <div className={`text-right text-sm md:text-base font-bold mb-2 ${!cell.isEmpty ? ((index % 7 > 4) ? 'text-[#059669]' : 'text-[#112a1a]') : 'text-[#4a6b52]'}`}>
+                    {cell.day}
+                  </div>
+
+                  {!cell.isEmpty && (slot1 || slot2) && (
+                    <div className="mt-auto flex flex-col gap-2">
+                      {slot1 && (
+                        <div className="text-[10px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-2 rounded border border-[#d0e5c0]">
+                          {slot1}
+                        </div>
+                      )}
+                      {slot2 && (
+                        <div className="text-[10px] md:text-xs leading-tight text-[#112a1a] font-semibold whitespace-pre-wrap break-words bg-[#e4eed8] p-2 rounded border border-[#059669]/30">
+                          {slot2}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Home() {
   const [forecasts, setForecasts] = useState<any[]>([]);
   const [ephemerisData, setEphemerisData] = useState<any[]>([]);
@@ -480,67 +487,80 @@ export default function Home() {
   const handleOpenRetrogrades = () => {
     const isRU = currentLang === 'RU';
     const tableContent = (
-      <div className="overflow-x-auto w-full relative z-10 custom-scrollbar pb-2">
-        <table className="w-full text-left border-collapse min-w-[500px] bg-white rounded-xl shadow-sm">
-          <thead>
-            <tr className="border-b border-[#d0e5c0] text-[#059669] text-xs uppercase tracking-wider bg-[#ecf4e3]">
-              <th className="py-4 px-4 font-bold">{isRU ? "Период (с - до)" : "Period"}</th>
-              <th className="py-4 px-4 font-bold">{isRU ? "Планета" : "Planet"}</th>
-              <th className="py-4 px-4 font-bold">{isRU ? "Транзит" : "Transit"}</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm md:text-base text-[#2d4a35] font-medium">
-            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
-              <td className="py-4 px-4 whitespace-nowrap">11.11.2025 — 11.03.2026</td>
-              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
-                <span className="text-[#059669] text-lg">♃</span> {isRU ? "Юпитер" : "Jupiter"}
-              </td>
-              <td className="py-4 px-4">{isRU ? "до 05.12.2025 — в Раке, после — в Близнецах" : "until 05.12.2025 in Cancer, then in Gemini"}</td>
-            </tr>
-            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
-              <td className="py-4 px-4 whitespace-nowrap">26.02.2026 — 20.03.2026</td>
-              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
-                <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
-              </td>
-              <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Водолее" : "in Aquarius the entire time"}</td>
-            </tr>
-            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
-              <td className="py-4 px-4 whitespace-nowrap">29.06.2026 — 23.07.2026</td>
-              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
-                <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
-              </td>
-              <td className="py-4 px-4">{isRU ? "до 07.07.2026 — в Раке, после — в Близнецах" : "until 07.07.2026 in Cancer, then in Gemini"}</td>
-            </tr>
-            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
-              <td className="py-4 px-4 whitespace-nowrap">26.07.2026 — 10.12.2026</td>
-              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
-                <span className="text-[#059669] text-lg">♄</span> {isRU ? "Сатурн" : "Saturn"}
-              </td>
-              <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Рыбах" : "in Pisces the entire time"}</td>
-            </tr>
-            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
-              <td className="py-4 px-4 whitespace-nowrap">03.10.2026 — 14.11.2026</td>
-              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
-                <span className="text-[#059669] text-lg">♀</span> {isRU ? "Венера" : "Venus"}
-              </td>
-              <td className="py-4 px-4">{isRU ? "до 05.11.2026 — в Весах, после — в Деве" : "until 05.11.2026 in Libra, then in Virgo"}</td>
-            </tr>
-            <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
-              <td className="py-4 px-4 whitespace-nowrap">24.10.2026 — 13.11.2026</td>
-              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
-                <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
-              </td>
-              <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Весах" : "in Libra the entire time"}</td>
-            </tr>
-            <tr className="border-transparent hover:bg-[#ecf4e3]/50 transition-colors">
-              <td className="py-4 px-4 whitespace-nowrap">13.12.2026 — 13.04.2027</td>
-              <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
-                <span className="text-[#059669] text-lg">♃</span> {isRU ? "Юпитер" : "Jupiter"}
-              </td>
-              <td className="py-4 px-4">{isRU ? "до 24.01.2027 — во Льве, после — в Раке" : "until 24.01.2027 in Leo, then in Cancer"}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="flex flex-col gap-4 w-full">
+        {/* Интегрированный логотип MIRA MAY над таблицей */}
+        <div className="bg-[#ecf4e3] border border-[#d0e5c0] rounded-xl py-3 px-4 md:px-5 flex justify-between items-center shadow-sm shrink-0">
+          <div className="flex items-center gap-2 text-sm md:text-lg font-['Cinzel',serif] font-bold tracking-[0.2em] text-[#112a1a] select-none">
+            <HeartLogo className="w-7 h-7 md:w-9 md:h-9 transform hover:scale-105 transition-transform duration-500 drop-shadow-sm flex-shrink-0" />
+            <span className="whitespace-nowrap">MIRA <span className="text-[#059669]">MAY</span></span>
+          </div>
+          <div className="text-[10px] md:text-sm text-[#059669] uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-[#d0e5c0] font-bold">
+            {isRU ? "БАЗА ТРАНЗИТОВ" : "TRANSITS BASE"}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto w-full relative z-10 custom-scrollbar pb-2">
+          <table className="w-full text-left border-collapse min-w-[500px] bg-white rounded-xl shadow-sm">
+            <thead>
+              <tr className="border-b border-[#d0e5c0] text-[#059669] text-xs uppercase tracking-wider bg-[#ecf4e3]">
+                <th className="py-4 px-4 font-bold">{isRU ? "Период (с - до)" : "Period"}</th>
+                <th className="py-4 px-4 font-bold">{isRU ? "Планета" : "Planet"}</th>
+                <th className="py-4 px-4 font-bold">{isRU ? "Транзит" : "Transit"}</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm md:text-base text-[#2d4a35] font-medium">
+              <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+                <td className="py-4 px-4 whitespace-nowrap">11.11.2025 — 11.03.2026</td>
+                <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                  <span className="text-[#059669] text-lg">♃</span> {isRU ? "Юпитер" : "Jupiter"}
+                </td>
+                <td className="py-4 px-4">{isRU ? "до 05.12.2025 — в Раке, после — в Близнецах" : "until 05.12.2025 in Cancer, then in Gemini"}</td>
+              </tr>
+              <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+                <td className="py-4 px-4 whitespace-nowrap">26.02.2026 — 20.03.2026</td>
+                <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                  <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
+                </td>
+                <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Водолее" : "in Aquarius the entire time"}</td>
+              </tr>
+              <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+                <td className="py-4 px-4 whitespace-nowrap">29.06.2026 — 23.07.2026</td>
+                <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                  <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
+                </td>
+                <td className="py-4 px-4">{isRU ? "до 07.07.2026 — в Раке, после — в Близнецах" : "until 07.07.2026 in Cancer, then in Gemini"}</td>
+              </tr>
+              <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+                <td className="py-4 px-4 whitespace-nowrap">26.07.2026 — 10.12.2026</td>
+                <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                  <span className="text-[#059669] text-lg">♄</span> {isRU ? "Сатурн" : "Saturn"}
+                </td>
+                <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Рыбах" : "in Pisces the entire time"}</td>
+              </tr>
+              <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+                <td className="py-4 px-4 whitespace-nowrap">03.10.2026 — 14.11.2026</td>
+                <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                  <span className="text-[#059669] text-lg">♀</span> {isRU ? "Венера" : "Venus"}
+                </td>
+                <td className="py-4 px-4">{isRU ? "до 05.11.2026 — в Весах, после — в Деве" : "until 05.11.2026 in Libra, then in Virgo"}</td>
+              </tr>
+              <tr className="border-b border-[#d0e5c0] hover:bg-[#ecf4e3]/50 transition-colors">
+                <td className="py-4 px-4 whitespace-nowrap">24.10.2026 — 13.11.2026</td>
+                <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                  <span className="text-[#059669] text-lg">☿</span> {isRU ? "Меркурий" : "Mercury"}
+                </td>
+                <td className="py-4 px-4">{isRU ? "все это время он будет находиться в Весах" : "in Libra the entire time"}</td>
+              </tr>
+              <tr className="border-transparent hover:bg-[#ecf4e3]/50 transition-colors">
+                <td className="py-4 px-4 whitespace-nowrap">13.12.2026 — 13.04.2027</td>
+                <td className="py-4 px-4 text-[#112a1a] font-bold flex items-center gap-2">
+                  <span className="text-[#059669] text-lg">♃</span> {isRU ? "Юпитер" : "Jupiter"}
+                </td>
+                <td className="py-4 px-4">{isRU ? "до 24.01.2027 — во Льве, после — в Раке" : "until 24.01.2027 in Leo, then in Cancer"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     );
     setActiveModal({ period_type: 'retrograde', content: tableContent });
@@ -621,33 +641,28 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- ОБНОВЛЕННЫЙ БЛОК ГЛАВНОЙ ШАПКИ --- */}
       <div className="relative w-full py-16 md:py-32 flex flex-col items-center justify-center overflow-hidden text-center px-4 bg-[#0a1f14]">
 
-        {/* Картинка на 100% непрозрачности, кристально чистая */}
         <img
-          src="/images/hero-bg2.jpg"
+          src="/hero-bg.jpg"
           alt="Aurora Header"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Плавный переход ТОЛЬКО в самом низу, чтобы склеить блок со светлой бегущей строкой */}
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#ecf4e3] to-transparent" />
 
-        {/* Локальное свечение строго за текстом. Картинка по краям остается 100% чистой */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-[80%] bg-[#ecf4e3]/80 blur-[100px] rounded-[100%] pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto">
           <div className="inline-block px-4 py-1.5 mb-5 md:mb-6 rounded-full border border-[#059669]/40 bg-[#ecf4e3]/90 text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.25em] font-bold shadow-sm backdrop-blur-md">
             {t.hero_badge}
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cinzel',serif] font-extrabold text-[#112a1a] leading-[1.15] tracking-wide uppercase px-2 drop-shadow-[0_0_15px_rgba(236,244,227,0.8)]">
             {t.hero_title_1} <br className="hidden md:block"/>
-            <span className="text-[#059669]">{t.hero_title_vector}</span> {t.hero_title_2}
+            <span className="text-[#059669] drop-shadow-none">{t.hero_title_vector}</span> {t.hero_title_2}
           </h1>
         </div>
       </div>
-      {/* -------------------------------------------------------- */}
 
       <div className="w-full bg-[#e4eed8] border-y border-[#d0e5c0] py-3 overflow-hidden relative flex items-center shadow-sm">
         <div className="absolute left-0 top-0 bottom-0 z-10 bg-gradient-to-r from-[#e4eed8] via-[#e4eed8] to-transparent w-28 md:w-40 flex items-center px-4 md:px-8 border-r border-[#d0e5c0]/50">
@@ -718,9 +733,9 @@ export default function Home() {
             <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full p-2 border border-[#059669]/30 relative order-1 lg:order-2 flex-shrink-0 shadow-lg bg-white">
               <div className="absolute inset-0 rounded-full border border-[#059669]/20 animate-[spin_10s_linear_infinite]" style={{ margin: '-10px' }}></div>
               <img
-                src="/images/gulmira2.jpg"
-                alt="Meditation & Focus"
-                className="w-full h-full object-cover rounded-full mix-blend-multiply opacity-80"
+                src="/why-image.jpg"
+                alt="Arina Nature"
+                className="w-full h-full object-cover rounded-full"
               />
               <div className="absolute inset-0 rounded-full shadow-[inset_0_0_50px_rgba(236,244,227,0.8)] pointer-events-none"></div>
             </div>
