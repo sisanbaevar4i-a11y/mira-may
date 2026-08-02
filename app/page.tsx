@@ -454,7 +454,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchForecasts() {
       try {
-        const { data, error } = await supabase.from('forecasts').select('*');
+        const { data, error } = await supabase.from('forecasts').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         if (data) setForecasts(data);
       } catch (err) {
@@ -486,12 +486,20 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const handleOpenForecast = (type: string) => {
-    const match = forecasts.find(f => f.period_type === type && f.lang_code === currentLang);
+  const handleOpenForecast = (periodType: string) => {
+    // В новой архитектуре используем поле 'type' вместо 'period_type'
+    // Находим самый свежий прогноз данного типа
+    const match = forecasts.find(f => f.type === periodType);
+
     if (match) {
-      setActiveModal(match);
+      setActiveModal({
+        period_type: periodType, // сохраняем для корректного вывода заголовка окна
+        title: match.title,
+        date_str: match.date_str,
+        content: match.content
+      });
     } else {
-      setActiveModal({ period_type: type, content: t.modal_fallback });
+      setActiveModal({ period_type: periodType, content: t.modal_fallback });
     }
   };
 
@@ -743,7 +751,7 @@ export default function Home() {
             <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full p-2 border border-[#059669]/30 relative order-1 lg:order-2 flex-shrink-0 shadow-lg bg-white">
               <div className="absolute inset-0 rounded-full border border-[#059669]/20 animate-[spin_10s_linear_infinite]" style={{ margin: '-10px' }}></div>
               <img
-                src="/imsges/gulmira2.jpg"
+                src="/images/gulmira2.jpg"
                 alt="Arina Nature"
                 className="w-full h-full object-cover rounded-full"
               />
@@ -933,13 +941,21 @@ export default function Home() {
 
             <div className="px-6 py-5 md:px-10 md:py-8 border-b border-[#d0e5c0] flex justify-between items-start bg-white z-20 shrink-0">
               <div className="pr-4">
-                <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.2em] mb-2 font-bold">{t.modal_telemetry}</div>
+                {activeModal.date_str && (
+                   <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.2em] mb-2 font-bold">{activeModal.date_str}</div>
+                )}
+                {!activeModal.date_str && (
+                   <div className="text-[#059669] text-[10px] md:text-xs uppercase tracking-[0.2em] mb-2 font-bold">{t.modal_telemetry}</div>
+                )}
+
                 <h3 className="text-2xl md:text-4xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wide">
-                  {activeModal.period_type === 'daily' ? t.grid_1_title :
-                   activeModal.period_type === 'monthly' ? t.grid_2_title :
-                   activeModal.period_type === 'yearly' ? t.grid_3_title :
-                   activeModal.period_type === 'retrograde' ? t.nav_retrograde :
-                   activeModal.period_type === 'nakshatra' ? t.calendar_title : 'Прогноз'}
+                  {activeModal.title ? activeModal.title : (
+                    activeModal.period_type === 'daily' ? t.grid_1_title :
+                    activeModal.period_type === 'monthly' ? t.grid_2_title :
+                    activeModal.period_type === 'yearly' ? t.grid_3_title :
+                    activeModal.period_type === 'retrograde' ? t.nav_retrograde :
+                    activeModal.period_type === 'nakshatra' ? t.calendar_title : 'Прогноз'
+                  )}
                 </h3>
               </div>
               <button
