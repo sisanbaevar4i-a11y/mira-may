@@ -34,7 +34,7 @@ const getCategoryLabel = (cat: string) => {
     nakshatras: 'Накшатры',
     horoscopes: 'Гороскопы',
     ayurveda: 'Аюрведа',
-    forecasts: 'Прогнозы'
+    forecasts: 'СТАРЫЙ ПРОГНОЗ (УДАЛИТЕ)'
   };
   return map[cat] || cat;
 };
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
 
   const [nakshatrasMap, setNakshatrasMap] = useState<Record<string, NakshatraDay>>({});
 
-  // Состояние формы статей (Добавлен ID для редактирования)
+  // Состояние формы публикаций (Добавлен ID для редактирования)
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('nakshatras');
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
   const handlePublishArticle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) {
-      alert('Укажите заголовок статьи, сэр.');
+      alert('Укажите заголовок публикации, сэр.');
       return;
     }
 
@@ -249,14 +249,14 @@ export default function AdminDashboard() {
         // Режим обновления
         const { error: updateError } = await supabase.from('articles').update(payload).eq('id', editingArticleId);
         if (updateError) throw updateError;
-        alert('Статья успешно обновлена, сэр.');
+        alert('Публикация успешно обновлена, сэр.');
       } else {
         // Режим создания
         const dateStrFormatted = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
         payload.date_str = dateStrFormatted;
         const { error: insertError } = await supabase.from('articles').insert([payload]);
         if (insertError) throw insertError;
-        alert('Статья успешно опубликована, сэр.');
+        alert('Публикация успешно опубликована, сэр.');
       }
 
       resetArticleForm();
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteArticle = async (id: string) => {
-    if (confirm('Подтверждаете удаление статьи?')) {
+    if (confirm('Подтверждаете удаление публикации?')) {
       const { error } = await supabase.from('articles').delete().eq('id', id);
       if (!error) {
         setArticlesList(prev => prev.filter(a => a.id !== id));
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
         <div className="flex gap-3 mb-8 border-b border-gray-800/60 pb-4 overflow-x-auto custom-scrollbar">
           {['interface', 'retrograde', 'nakshatra', 'articles', 'forecasts'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`py-3 px-6 rounded-xl whitespace-nowrap font-medium text-xs tracking-widest uppercase transition-all duration-300 ${activeTab === tab ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] font-bold' : 'bg-[#080a0f] text-gray-400 hover:text-white border border-gray-800/80'}`}>
-              {tab === 'interface' ? 'Тексты интерфейса' : tab === 'retrograde' ? 'Ретроградные планеты' : tab === 'nakshatra' ? 'Календарь накшатр (Время+)' : tab === 'articles' ? '📖 Управление статьями' : '🔮 Прогнозы'}
+              {tab === 'interface' ? 'Тексты интерфейса' : tab === 'retrograde' ? 'Ретроградные планеты' : tab === 'nakshatra' ? 'Календарь накшатр (Время+)' : tab === 'articles' ? '📖 Управление публикациями' : '🔮 Прогнозы'}
             </button>
           ))}
         </div>
@@ -784,13 +784,13 @@ export default function AdminDashboard() {
               <div className="space-y-10">
                 <div className="bg-[#080a0f]/90 border border-gray-800/80 rounded-3xl p-6 md:p-10 shadow-2xl">
                   <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">
-                    {editingArticleId ? 'Редактировать статью' : 'Опубликовать новую статью'}
+                    {editingArticleId ? 'Редактировать публикацию' : 'Опубликовать новую публикацию'}
                   </h2>
 
                   <form onSubmit={handlePublishArticle} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Заголовок статьи</label>
+                        <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Заголовок публикации</label>
                         <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} required placeholder="Например: Накшатра Свати..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none" />
                       </div>
                       <div>
@@ -817,17 +817,17 @@ export default function AdminDashboard() {
 
                     <div>
                       <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Краткое описание (превью)</label>
-                      <textarea value={newExcerpt} onChange={e => setNewExcerpt(e.target.value)} placeholder="Пару предложений о чем статья..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[80px]" />
+                      <textarea value={newExcerpt} onChange={e => setNewExcerpt(e.target.value)} placeholder="Пару предложений о чем публикация..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[80px]" />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Содержимое статьи (Текст)</label>
-                      <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Полный текст статьи..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[160px]" />
+                      <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Содержимое публикации (Текст)</label>
+                      <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Полный текст публикации..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[160px]" />
                     </div>
 
                     <div className="flex flex-wrap gap-4">
                       <button type="submit" disabled={isPublishing} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs uppercase tracking-wider font-bold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50">
-                        {isPublishing ? 'Синхронизация...' : (editingArticleId ? 'Сохранить изменения' : 'Опубликовать статью')}
+                        {isPublishing ? 'Синхронизация...' : (editingArticleId ? 'Сохранить изменения' : 'Опубликовать публикацию')}
                       </button>
                       {editingArticleId && (
                         <button type="button" onClick={resetArticleForm} className="px-8 py-4 bg-[#0c0e14] border border-gray-700 text-gray-400 text-xs uppercase tracking-wider font-bold rounded-xl hover:text-white hover:border-gray-500 transition-all">
@@ -842,7 +842,7 @@ export default function AdminDashboard() {
                 <div className="bg-[#080a0f]/90 border border-gray-800/80 rounded-3xl p-6 md:p-10 shadow-2xl">
                   <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">Опубликованные материалы ({articlesList.length})</h2>
                   {articlesList.length === 0 ? (
-                    <p className="text-sm text-gray-500 italic">Пока нет ни одной статьи в базе данных.</p>
+                    <p className="text-sm text-gray-500 italic">Пока нет ни одной публикации в базе данных.</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {articlesList.map(art => (

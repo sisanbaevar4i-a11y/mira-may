@@ -6,30 +6,28 @@ import { supabase } from '../../lib/supabaseClient';
 // --- ЛИНГВИСТИЧЕСКОЕ ЯДРО (только UI) ---
 const DICTIONARY: Record<string, Record<string, any>> = {
   RU: {
-    back: "Библиотека знаний",
+    back: "На главную",
     read_more: "Следующие материалы",
-    all_articles: "Вся библиотека",
-    library_title: "Библиотека знаний",
+    all_articles: "Все публикации",
+    library_title: "Публикации",
     library_subtitle: "Исследуйте мудрость ведической астрологии, космические циклы и принципы гармонии.",
     tabs: [
       { id: "nakshatras", name: "Накшатры" },
       { id: "horoscopes", name: "Гороскопы личностей" },
-      { id: "ayurveda", name: "Аюрведа" },
-      { id: "forecasts", name: "Прогнозы" }
+      { id: "ayurveda", name: "Аюрведа" }
     ],
     empty_state: "В этом разделе пока нет опубликованных материалов."
   },
   EN: {
-    back: "Knowledge Library",
+    back: "To Main",
     read_more: "Next Materials",
-    all_articles: "Full Library",
-    library_title: "Knowledge Library",
+    all_articles: "All Publications",
+    library_title: "Publications",
     library_subtitle: "Explore the wisdom of Vedic astrology, cosmic cycles, and harmony principles.",
     tabs: [
       { id: "nakshatras", name: "Nakshatras" },
       { id: "horoscopes", name: "Famous Horoscopes" },
-      { id: "ayurveda", name: "Ayurveda" },
-      { id: "forecasts", name: "Forecasts" }
+      { id: "ayurveda", name: "Ayurveda" }
     ],
     empty_state: "There are no published materials in this section yet."
   }
@@ -73,7 +71,6 @@ const getCategoryName = (cat: string, lang: string) => {
       case 'nakshatras': return 'Накшатры';
       case 'horoscopes': return 'Гороскопы';
       case 'ayurveda': return 'Аюрведа';
-      case 'forecasts': return 'Прогнозы';
       default: return cat;
     }
   } else {
@@ -81,7 +78,6 @@ const getCategoryName = (cat: string, lang: string) => {
       case 'nakshatras': return 'Nakshatras';
       case 'horoscopes': return 'Horoscopes';
       case 'ayurveda': return 'Ayurveda';
-      case 'forecasts': return 'Forecasts';
       default: return cat;
     }
   }
@@ -154,7 +150,7 @@ export default function ArticlesPage() {
             </a>
           )}
           <span className="text-[11px] sm:text-xs tracking-[0.2em] uppercase font-bold text-[#4a6b52] hidden sm:block">
-            {selectedArticleId ? t.back : "На главную"}
+            {selectedArticleId ? t.back : t.back}
           </span>
         </div>
 
