@@ -280,7 +280,7 @@ export default function AdminDashboard() {
   };
 
 
-  // --- ЛОГИКА УПРАВЛЕНИЯ ПРОГНОЗАМИ ---
+  // --- ЛОГИКА УПРАВЛЕНИ ПРОГНОЗАМИ ---
   const resetForecastForm = () => {
     setEditingForecastId(null);
     setNewForecastTitle('');
@@ -665,7 +665,7 @@ export default function AdminDashboard() {
                                     <button
                                       type="button"
                                       onClick={() => handleNakshatraGridChange(dateKey, 'time_ru_1', '')}
-                                      className="absolute -top-2 -right-2 xl:-left-2 xl:right-auto w-6 h-6 bg-[#080a0f] text-red-400 rounded-full border border-red-500/40 flex items-center justify-center text-xs opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10"
+                                      className="absolute -top-2 -right-2 xl:-left-2 xl:right-auto w-6 h-6 bg-[#080a0f] text-red-400 rounded-full border border-red-500/40 flex items-center justify-center text-xs opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10"
                                       title="Очистить время"
                                     >✕</button>
                                   )}
