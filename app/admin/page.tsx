@@ -33,7 +33,8 @@ const getCategoryLabel = (cat: string) => {
   const map: Record<string, string> = {
     nakshatras: 'Накшатры',
     horoscopes: 'Гороскопы',
-    ayurveda: 'Аюрведа',
+    articles: 'Статьи',
+    ayurveda: 'Статьи (Архив)', // Fallback для старых записей
     forecasts: 'СТАРЫЙ ПРОГНОЗ (УДАЛИТЕ)'
   };
   return map[cat] || cat;
@@ -798,7 +799,7 @@ export default function AdminDashboard() {
                         <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none">
                           <option value="nakshatras">Накшатры</option>
                           <option value="horoscopes">Гороскопы известных личностей</option>
-                          <option value="ayurveda">Аюрведа</option>
+                          <option value="articles">Статьи</option>
                         </select>
                       </div>
                     </div>

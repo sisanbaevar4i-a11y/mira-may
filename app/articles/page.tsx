@@ -14,7 +14,7 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     tabs: [
       { id: "nakshatras", name: "Накшатры" },
       { id: "horoscopes", name: "Гороскопы личностей" },
-      { id: "ayurveda", name: "Аюрведа" }
+      { id: "articles", name: "Статьи" }
     ],
     empty_state: "В этом разделе пока нет опубликованных материалов."
   },
@@ -27,7 +27,7 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     tabs: [
       { id: "nakshatras", name: "Nakshatras" },
       { id: "horoscopes", name: "Famous Horoscopes" },
-      { id: "ayurveda", name: "Ayurveda" }
+      { id: "articles", name: "Articles" }
     ],
     empty_state: "There are no published materials in this section yet."
   }
@@ -70,14 +70,16 @@ const getCategoryName = (cat: string, lang: string) => {
     switch(cat) {
       case 'nakshatras': return 'Накшатры';
       case 'horoscopes': return 'Гороскопы';
-      case 'ayurveda': return 'Аюрведа';
+      case 'articles': return 'Статьи';
+      case 'ayurveda': return 'Статьи'; // Fallback для старых записей
       default: return cat;
     }
   } else {
     switch(cat) {
       case 'nakshatras': return 'Nakshatras';
       case 'horoscopes': return 'Horoscopes';
-      case 'ayurveda': return 'Ayurveda';
+      case 'articles': return 'Articles';
+      case 'ayurveda': return 'Articles'; // Fallback для старых записей
       default: return cat;
     }
   }
@@ -123,7 +125,7 @@ export default function ArticlesPage() {
 
   const t = DICTIONARY[currentLang];
 
-  const filteredArticles = dbArticles.filter(art => art.category === activeTab);
+  const filteredArticles = dbArticles.filter(art => art.category === activeTab || (activeTab === 'articles' && art.category === 'ayurveda'));
   const selectedDbArticle = dbArticles.find(art => art.id === selectedArticleId);
 
   return (
