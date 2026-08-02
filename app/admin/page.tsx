@@ -47,7 +47,8 @@ export default function AdminDashboard() {
 
   const [nakshatrasMap, setNakshatrasMap] = useState<Record<string, NakshatraDay>>({});
 
-  // Состояние формы новой статьи
+  // Состояние формы статей (Добавлен ID для редактирования)
+  const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('nakshatras');
   const [newExcerpt, setNewExcerpt] = useState('');
@@ -56,7 +57,8 @@ export default function AdminDashboard() {
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // Состояние формы нового прогноза
+  // Состояние формы прогнозов (Добавлен ID для редактирования)
+  const [editingForecastId, setEditingForecastId] = useState<string | null>(null);
   const [newForecastTitle, setNewForecastTitle] = useState('');
   const [newForecastType, setNewForecastType] = useState('daily');
   const [newForecastContent, setNewForecastContent] = useState('');
@@ -183,6 +185,28 @@ export default function AdminDashboard() {
     }
   };
 
+  // --- ЛОГИКА УПРАВЛЕНИЯ СТАТЬЯМИ ---
+  const resetArticleForm = () => {
+    setEditingArticleId(null);
+    setNewTitle('');
+    setNewCategory('nakshatras');
+    setNewExcerpt('');
+    setNewReadTime('5 мин чтения');
+    setNewContent('');
+    setNewImageFile(null);
+  };
+
+  const startEditArticle = (art: any) => {
+    setEditingArticleId(art.id);
+    setNewTitle(art.title || '');
+    setNewCategory(art.category || 'nakshatras');
+    setNewExcerpt(art.excerpt || '');
+    setNewReadTime(art.read_time || '5 мин чтения');
+    setNewContent(art.content || '');
+    setNewImageFile(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handlePublishArticle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) {
@@ -208,32 +232,38 @@ export default function AdminDashboard() {
         }
       }
 
-      const dateStrFormatted = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-
-      const { error: insertError } = await supabase.from('articles').insert([{
+      const payload: any = {
         title: newTitle,
         category: newCategory,
         excerpt: newExcerpt,
         content: newContent,
-        image_url: imageUrl,
         read_time: newReadTime,
-        date_str: dateStrFormatted
-      }]);
+      };
 
-      if (insertError) {
-        console.error('Ошибка базы данных:', insertError);
-        alert(`Ошибка базы данных: ${insertError.message}`);
-        throw insertError;
+      // Обновляем картинку только если загрузили новую
+      if (imageUrl) {
+        payload.image_url = imageUrl;
       }
 
-      alert('Статья успешно опубликована, сэр.');
-      setNewTitle('');
-      setNewExcerpt('');
-      setNewContent('');
-      setNewImageFile(null);
+      if (editingArticleId) {
+        // Режим обновления
+        const { error: updateError } = await supabase.from('articles').update(payload).eq('id', editingArticleId);
+        if (updateError) throw updateError;
+        alert('Статья успешно обновлена, сэр.');
+      } else {
+        // Режим создания
+        const dateStrFormatted = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        payload.date_str = dateStrFormatted;
+        const { error: insertError } = await supabase.from('articles').insert([payload]);
+        if (insertError) throw insertError;
+        alert('Статья успешно опубликована, сэр.');
+      }
+
+      resetArticleForm();
       fetchData();
     } catch (err: any) {
       console.error('Критический сбой:', err);
+      alert(`Сбой базы данных: ${err.message}`);
     } finally {
       setIsPublishing(false);
     }
@@ -248,6 +278,23 @@ export default function AdminDashboard() {
     }
   };
 
+
+  // --- ЛОГИКА УПРАВЛЕНИЯ ПРОГНОЗАМИ ---
+  const resetForecastForm = () => {
+    setEditingForecastId(null);
+    setNewForecastTitle('');
+    setNewForecastType('daily');
+    setNewForecastContent('');
+  };
+
+  const startEditForecast = (forecast: any) => {
+    setEditingForecastId(forecast.id);
+    setNewForecastTitle(forecast.title || '');
+    setNewForecastType(forecast.type || 'daily');
+    setNewForecastContent(forecast.content || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handlePublishForecast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newForecastTitle.trim()) {
@@ -258,27 +305,31 @@ export default function AdminDashboard() {
     setIsPublishingForecast(true);
 
     try {
-      const dateStrFormatted = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-
-      const { error: insertError } = await supabase.from('forecasts').insert([{
+      const payload: any = {
         title: newForecastTitle,
-        type: newForecastType, // daily, monthly, yearly
+        type: newForecastType,
         content: newForecastContent,
-        date_str: dateStrFormatted
-      }]);
+      };
 
-      if (insertError) {
-        console.error('Ошибка базы данных (forecasts):', insertError);
-        alert(`Ошибка БД: ${insertError.message}`);
-        throw insertError;
+      if (editingForecastId) {
+        // Режим обновления
+        const { error: updateError } = await supabase.from('forecasts').update(payload).eq('id', editingForecastId);
+        if (updateError) throw updateError;
+        alert('Прогноз успешно обновлен, сэр.');
+      } else {
+        // Режим создания
+        const dateStrFormatted = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        payload.date_str = dateStrFormatted;
+        const { error: insertError } = await supabase.from('forecasts').insert([payload]);
+        if (insertError) throw insertError;
+        alert('Прогноз успешно опубликован в системе, сэр.');
       }
 
-      alert('Прогноз успешно опубликован в системе, сэр.');
-      setNewForecastTitle('');
-      setNewForecastContent('');
+      resetForecastForm();
       fetchData();
     } catch (err: any) {
       console.error('Критический сбой при публикации прогноза:', err);
+      alert(`Сбой БД: ${err.message}`);
     } finally {
       setIsPublishingForecast(false);
     }
@@ -292,6 +343,7 @@ export default function AdminDashboard() {
       }
     }
   };
+
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -412,7 +464,7 @@ export default function AdminDashboard() {
             <div>
               <div className="text-indigo-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-1 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Admin Terminal v7.0 (CMS + Forecasts + Calendar)
+                Admin Terminal v7.1 (CMS CRUD Edit Support)
               </div>
               <h1 className="text-2xl md:text-3xl font-['Cinzel',serif] font-bold text-white tracking-wide">Панель управления контентом</h1>
             </div>
@@ -731,7 +783,9 @@ export default function AdminDashboard() {
             {activeTab === 'articles' && (
               <div className="space-y-10">
                 <div className="bg-[#080a0f]/90 border border-gray-800/80 rounded-3xl p-6 md:p-10 shadow-2xl">
-                  <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">Опубликовать новую статью</h2>
+                  <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">
+                    {editingArticleId ? 'Редактировать статью' : 'Опубликовать новую статью'}
+                  </h2>
 
                   <form onSubmit={handlePublishArticle} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -757,6 +811,7 @@ export default function AdminDashboard() {
                       <div>
                         <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 font-semibold">Обложка (Фото / Изображение)</label>
                         <input type="file" accept="image/*" onChange={e => e.target.files && setNewImageFile(e.target.files[0])} className="w-full bg-[#030407] border border-gray-800 rounded-xl p-3 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" />
+                        {editingArticleId && <div className="text-[9px] text-indigo-400 mt-1 pl-1">Оставьте пустым, чтобы сохранить текущую обложку.</div>}
                       </div>
                     </div>
 
@@ -770,9 +825,16 @@ export default function AdminDashboard() {
                       <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Полный текст статьи..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[160px]" />
                     </div>
 
-                    <button type="submit" disabled={isPublishing} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs uppercase tracking-wider font-bold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50">
-                      {isPublishing ? 'Публикация в облако...' : 'Опубликовать статью'}
-                    </button>
+                    <div className="flex flex-wrap gap-4">
+                      <button type="submit" disabled={isPublishing} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs uppercase tracking-wider font-bold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50">
+                        {isPublishing ? 'Синхронизация...' : (editingArticleId ? 'Сохранить изменения' : 'Опубликовать статью')}
+                      </button>
+                      {editingArticleId && (
+                        <button type="button" onClick={resetArticleForm} className="px-8 py-4 bg-[#0c0e14] border border-gray-700 text-gray-400 text-xs uppercase tracking-wider font-bold rounded-xl hover:text-white hover:border-gray-500 transition-all">
+                          Отменить
+                        </button>
+                      )}
+                    </div>
                   </form>
                 </div>
 
@@ -784,7 +846,7 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {articlesList.map(art => (
-                        <div key={art.id} className="bg-[#030407] border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
+                        <div key={art.id} className={`bg-[#030407] border rounded-2xl p-5 flex flex-col justify-between transition-colors ${editingArticleId === art.id ? 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'border-gray-800'}`}>
                           <div>
                             <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-950/60 px-2.5 py-1 rounded-md border border-indigo-900/50">{getCategoryLabel(art.category)}</span>
                             <h3 className="text-base font-bold text-white mt-3 mb-2 font-['Cinzel',serif]">{art.title}</h3>
@@ -792,7 +854,10 @@ export default function AdminDashboard() {
                           </div>
                           <div className="mt-6 pt-4 border-t border-gray-800/80 flex justify-between items-center">
                             <span className="text-[10px] text-gray-500">{art.date_str}</span>
-                            <button onClick={() => handleDeleteArticle(art.id)} className="text-xs text-red-400 hover:text-red-300 font-semibold bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors">Удалить</button>
+                            <div className="flex gap-2">
+                               <button onClick={() => startEditArticle(art)} className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold bg-indigo-950/30 border border-indigo-900/50 px-3 py-1.5 rounded-lg transition-colors">Изменить</button>
+                               <button onClick={() => handleDeleteArticle(art.id)} className="text-xs text-red-400 hover:text-red-300 font-semibold bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors">Удалить</button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -806,7 +871,9 @@ export default function AdminDashboard() {
             {activeTab === 'forecasts' && (
               <div className="space-y-10">
                 <div className="bg-[#080a0f]/90 border border-gray-800/80 rounded-3xl p-6 md:p-10 shadow-2xl">
-                  <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">Опубликовать новый прогноз</h2>
+                  <h2 className="text-xl font-bold text-white uppercase tracking-widest font-['Cinzel',serif] mb-6">
+                    {editingForecastId ? 'Редактировать прогноз' : 'Опубликовать новый прогноз'}
+                  </h2>
 
                   <form onSubmit={handlePublishForecast} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -829,9 +896,16 @@ export default function AdminDashboard() {
                       <textarea value={newForecastContent} onChange={e => setNewForecastContent(e.target.value)} required placeholder="Детальный анализ транзитов и аспектов..." className="w-full bg-[#030407] border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 focus:outline-none min-h-[200px]" />
                     </div>
 
-                    <button type="submit" disabled={isPublishingForecast} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs uppercase tracking-wider font-bold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50">
-                      {isPublishingForecast ? 'Синхронизация с базой...' : 'Опубликовать прогноз'}
-                    </button>
+                    <div className="flex flex-wrap gap-4">
+                      <button type="submit" disabled={isPublishingForecast} className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs uppercase tracking-wider font-bold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50">
+                        {isPublishingForecast ? 'Синхронизация...' : (editingForecastId ? 'Сохранить изменения' : 'Опубликовать прогноз')}
+                      </button>
+                      {editingForecastId && (
+                        <button type="button" onClick={resetForecastForm} className="px-8 py-4 bg-[#0c0e14] border border-gray-700 text-gray-400 text-xs uppercase tracking-wider font-bold rounded-xl hover:text-white hover:border-gray-500 transition-all">
+                          Отменить
+                        </button>
+                      )}
+                    </div>
                   </form>
                 </div>
 
@@ -843,7 +917,7 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {forecastsList.map(forecast => (
-                        <div key={forecast.id} className="bg-[#030407] border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
+                        <div key={forecast.id} className={`bg-[#030407] border rounded-2xl p-5 flex flex-col justify-between transition-colors ${editingForecastId === forecast.id ? 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'border-gray-800'}`}>
                           <div>
                             <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-950/60 px-2.5 py-1 rounded-md border border-indigo-900/50">
                               {forecast.type === 'daily' ? 'Ежедневный' : forecast.type === 'monthly' ? 'Ежемесячный' : 'Ежегодный'}
@@ -853,7 +927,10 @@ export default function AdminDashboard() {
                           </div>
                           <div className="mt-6 pt-4 border-t border-gray-800/80 flex justify-between items-center">
                             <span className="text-[10px] text-gray-500">{forecast.date_str}</span>
-                            <button onClick={() => handleDeleteForecast(forecast.id)} className="text-xs text-red-400 hover:text-red-300 font-semibold bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors">Удалить</button>
+                            <div className="flex gap-2">
+                               <button onClick={() => startEditForecast(forecast)} className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold bg-indigo-950/30 border border-indigo-900/50 px-3 py-1.5 rounded-lg transition-colors">Изменить</button>
+                               <button onClick={() => handleDeleteForecast(forecast.id)} className="text-xs text-red-400 hover:text-red-300 font-semibold bg-red-950/30 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors">Удалить</button>
+                            </div>
                           </div>
                         </div>
                       ))}
