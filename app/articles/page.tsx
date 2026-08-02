@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
-// --- ЛИНГВИСТИЧЕСКОЕ ЯДРО ---
+// --- ЛИНГВИСТИЧЕСКОЕ ЯДРО (только UI) ---
 const DICTIONARY: Record<string, Record<string, any>> = {
   RU: {
     back: "Библиотека знаний",
-    toc: "Оглавление",
     read_more: "Следующие материалы",
     all_articles: "Вся библиотека",
     library_title: "Библиотека знаний",
@@ -15,174 +15,10 @@ const DICTIONARY: Record<string, Record<string, any>> = {
       { id: "nakshatras", name: "Накшатры" },
       { id: "horoscopes", name: "Гороскопы личностей" },
       { id: "ayurveda", name: "Аюрведа" }
-    ],
-    articles: {
-      nakshatras: [
-        {
-          id: "swati",
-          title: "Накшатра Свати: Энергия Свободы, Ветра и Звезды Арктур",
-          date: "24 Июля 2026",
-          readTime: "6 мин чтения",
-          excerpt: "В ведической астрологии Свати — 15-я накшатра в созвездии Весов. Её символ — молодой росток, гнущийся под порывами ветра.",
-          category: "Накшатры"
-        },
-        {
-          id: "ashvini",
-          title: "Накшатра Ашвини: Импульс начала и жажда скорости",
-          date: "20 Июля 2026",
-          readTime: "5 мин чтения",
-          excerpt: "Первая накшатра зодиакального круга, несущая энергию исцеления, быстрого старта и божественных врачей.",
-          category: "Накшатры"
-        }
-      ],
-      horoscopes: [
-        {
-          id: "einstein",
-          title: "Космический код гения: Анализ гороскопа Альберта Эйнштейна",
-          date: "15 Июля 2026",
-          readTime: "8 мин чтения",
-          excerpt: "Как расположение планет и сильные дома гороскопа сформировали мышление великого физика.",
-          category: "Гороскопы личностей"
-        }
-      ],
-      ayurveda: [
-        {
-          id: "doshas",
-          title: "Три доши в повседневной жизни: Баланс Ваты, Питы и Капхи",
-          date: "10 Июля 2026",
-          readTime: "7 мин чтения",
-          excerpt: "Фундаментальные принципы аюрведической конституции тела и методы поддержания внутренней гармонии.",
-          category: "Аюрведа"
-        }
-      ]
-    },
-    article: {
-      title: "Накшатра Свати: Энергия Свободы, Ветра и Звезды Арктур",
-      category: "Накшатры",
-      sections: [
-        {
-          id: "intro",
-          title: "Введение",
-          content: (
-            <div className="space-y-6 drop-cap">
-              <p className="text-lg sm:text-xl md:text-2xl font-medium text-[#112a1a] leading-relaxed font-['Cinzel',serif]">
-                В ведической астрологии Свати — 15-я накшатра, расположенная в созвездии Весов. Её астрономическим ориентиром выступает Арктур (Альфа Волопаса) — одна из самых ярких и величественных звёзд ночного неба. В переводе с санскрита «Свати» означает «собственное я», «самостоятельная» или «меч».
-              </p>
-              <p className="border-l-2 border-[#059669] pl-4 sm:pl-6 ml-1 sm:ml-2 text-[#2d4a35] font-medium text-sm sm:text-base">
-                Символом этой накшатры является молодой росток, гнущийся под порывами ветра, а её управляющим божеством выступает Ваю — бог ветра и жизненной силы. Это сочетание даёт людям, рождённым под влиянием Свати, невероятную подвижность, интеллект и неординарный жизненный путь.
-              </p>
-            </div>
-          )
-        },
-        {
-          id: "independence",
-          title: "1. Самостоятельный одиночка",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                Главная движущая сила Свати — это жажда абсолютной свободы. Людям, связанным с этой накшатрой, жизненно необходимо чувствовать себя хозяевами собственного времени, решений и судьбы.
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Дух автономности:</strong> <span className="text-[#2d4a35]">Свати тяжело переносят жёсткий контроль, рамки и чужое давление. Они предпочитают прокладывать собственную тропу, даже если она проходит вдали от проторенных дорог.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Природа одиночки:</strong> <span className="text-[#2d4a35]">Несмотря на то, что Свати умеют быть приятными в общении, внутри них всегда остаётся обособленное пространство. Они вполне комфортно чувствуют себя наедине с собой.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "adaptation",
-          title: "2. Искусство адаптации",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                Росток, подчиняющийся ветру, не ломается — он гнётся, уклоняется и продолжает расти. В этом заключается уникальная суперсила Свати.
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Гибкость в любых ситуациях:</strong> <span className="text-[#2d4a35]">Энергия ветра наделяет Свати умением мгновенно подстраиваться под меняющиеся обстоятельства и считывать правила игры.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Дипломатичность:</strong> <span className="text-[#2d4a35]">Находясь под влиянием знака Весов, они обладают чарующей манерой общения, избегая конфликтов благодаря гибкому уму и такту.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "talents",
-          title: "3. Многогранный талант",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                Арктур дарует людям Свати яркую искру и выраженную индивидуальность в сферах интеллекта и эстетики:
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Мастерство слова:</strong> <span className="text-[#2d4a35]">Свати умеют убеждать, преподносить идеи и находить общий язык с самыми разными людьми. Отличные стратеги и ораторы.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Творческий потенциал:</strong> <span className="text-[#2d4a35]">Чувство гармонии и красоты делает их успешными в искусстве, дизайне, музыке и литературе.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "knowledge",
-          title: "4. Жажда знаний",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                Свати пребывает в непрерывном движении, и это касается как физического мира, так и ментального поиска.
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Вечный ученик:</strong> <span className="text-[#2d4a35]">Обладая пытливым умом, они искренне увлечены поиском истины, любят читать, исследовать новые концепции и совершенствовать навыки.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Широта кругозора:</strong> <span className="text-[#2d4a35]">Их привлекают самые разнообразные области, помогая сохранять независимость в любой ситуации.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "essence",
-          title: "Главный урок",
-          content: (
-            <div className="bg-[#112a1a] p-6 sm:p-10 rounded-3xl border-l-4 border-[#059669] shadow-xl mt-12 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#059669]/10 rounded-full blur-3xl pointer-events-none"></div>
-              <p className="text-lg sm:text-xl md:text-2xl font-['Cinzel',serif] text-[#059669] leading-relaxed mb-4 relative z-10">
-                Истинная сила — в умении танцевать с ветром.
-              </p>
-              <p className="text-[#c2dec9] font-light leading-relaxed relative z-10 text-xs sm:text-sm md:text-base">
-                Свати не призывает к жесткой борьбе или слепому сопротивлению. Её энергия учит нас сохранять свой внутренний стержень, мягко и гибко адаптируясь к любым переменчивым условиям.
-              </p>
-            </div>
-          )
-        }
-      ]
-    },
-    other_articles: [
-      { id: "ashvini", tag: "Накшатры", title: "Накшатра Ашвини: Импульс начала и жажда скорости", date: "24 Июля 2026" },
-      { id: "saturn-pisces", tag: "Транзиты", title: "Сатурн в Рыбах: Глубокие кармические уроки и растворение эго", date: "18 Июля 2026" }
     ]
   },
   EN: {
     back: "Knowledge Library",
-    toc: "Table of Contents",
     read_more: "Next Materials",
     all_articles: "Full Library",
     library_title: "Knowledge Library",
@@ -191,169 +27,6 @@ const DICTIONARY: Record<string, Record<string, any>> = {
       { id: "nakshatras", name: "Nakshatras" },
       { id: "horoscopes", name: "Famous Horoscopes" },
       { id: "ayurveda", name: "Ayurveda" }
-    ],
-    articles: {
-      nakshatras: [
-        {
-          id: "swati",
-          title: "Swati Nakshatra: Energy of Freedom, Wind, and Arcturus",
-          date: "July 24, 2026",
-          readTime: "6 min read",
-          excerpt: "In Vedic astrology, Swati is the 15th nakshatra in Libra. Symbolized by a young shoot bending in the wind.",
-          category: "Nakshatras"
-        },
-        {
-          id: "ashvini",
-          title: "Ashwini Nakshatra: The Impulse of Beginning and Thirst for Speed",
-          date: "July 20, 2026",
-          readTime: "5 min read",
-          excerpt: "The first nakshatra carrying the energy of healing, quick starts, and divine physicians.",
-          category: "Nakshatras"
-        }
-      ],
-      horoscopes: [
-        {
-          id: "einstein",
-          title: "Cosmic Code of a Genius: Albert Einstein's Horoscope Analysis",
-          date: "July 15, 2026",
-          readTime: "8 min read",
-          excerpt: "How planetary placements and strong astrological houses shaped the great physicist's mind.",
-          category: "Famous Personalities"
-        }
-      ],
-      ayurveda: [
-        {
-          id: "doshas",
-          title: "Three Doshas in Daily Life: Balancing Vata, Pitta, and Kapha",
-          date: "July 10, 2026",
-          readTime: "7 min read",
-          excerpt: "Fundamental principles of Ayurvedic body constitution and methods for maintaining inner harmony.",
-          category: "Ayurveda"
-        }
-      ]
-    },
-    article: {
-      title: "Swati Nakshatra: Energy of Freedom, Wind, and Arcturus",
-      category: "Nakshatras",
-      sections: [
-        {
-          id: "intro",
-          title: "Introduction",
-          content: (
-            <div className="space-y-6 drop-cap">
-              <p className="text-lg sm:text-xl md:text-2xl font-medium text-[#112a1a] leading-relaxed font-['Cinzel',serif]">
-                In Vedic astrology, Swati is the 15th nakshatra, located in the constellation of Libra. Its astronomical marker is Arcturus (Alpha Boötis)—one of the brightest and most magnificent stars in the night sky. Translated from Sanskrit, "Swati" means "oneself," "independent," or "sword."
-              </p>
-              <p className="border-l-2 border-[#059669] pl-4 sm:pl-6 ml-1 sm:ml-2 text-[#2d4a35] font-medium text-sm sm:text-base">
-                The symbol of this nakshatra is a young shoot bending under gusts of wind, and its ruling deity is Vayu—the god of wind and life force. This combination gives people born under the influence of Swati incredible mobility, intellect, and an extraordinary life path.
-              </p>
-            </div>
-          )
-        },
-        {
-          id: "independence",
-          title: "1. The Independent Lone Wolf",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                The main driving force of Swati is the thirst for absolute freedom. People connected with this nakshatra desperately need to feel like masters of their own time, decisions, and destiny.
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Spirit of Autonomy:</strong> <span className="text-[#2d4a35]">Swati individuals have a hard time tolerating strict control, boundaries, and external pressure. They prefer to forge their own path, even if it leads far from the beaten track.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Lone Nature:</strong> <span className="text-[#2d4a35]">Despite the fact that Swati can be pleasant in communication, there always remains an isolated space inside them. They feel quite comfortable being alone with themselves.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "adaptation",
-          title: "2. The Art of Adaptation",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                A shoot submitting to the wind does not break—it bends, dodges, and continues to grow. This is the unique superpower of Swati.
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Flexibility in Any Situation:</strong> <span className="text-[#2d4a35]">The energy of the wind endows Swati with the ability to instantly adapt to changing circumstances and read the rules of the game.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Diplomacy:</strong> <span className="text-[#2d4a35]">Being under the influence of Libra, they possess a charming manner of communication, avoiding conflicts thanks to a flexible mind and tact.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "talents",
-          title: "3. Multifaceted Talent",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                Arcturus bestows Swati individuals with a bright spark and pronounced individuality in the realms of intellect and aesthetics:
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Mastery of Words:</strong> <span className="text-[#2d4a35]">Swati know how to persuade, present ideas, and find common ground with very different people. They are excellent strategists and orators.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Creative Potential:</strong> <span className="text-[#2d4a35]">A sense of harmony and beauty makes them successful in art, design, music, and literature.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "knowledge",
-          title: "4. Thirst for Knowledge",
-          content: (
-            <div className="space-y-6">
-              <p className="text-[#2d4a35] text-sm sm:text-base">
-                Swati is in continuous motion, and this applies to both the physical world and mental pursuit.
-              </p>
-              <ul className="space-y-4 sm:space-y-6 mt-6 bg-white p-5 sm:p-8 rounded-2xl border border-[#d0e5c0] shadow-sm">
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Eternal Student:</strong> <span className="text-[#2d4a35]">Possessing an inquiring mind, they are genuinely passionate about the search for truth, love to read, explore new concepts, and improve skills.</span>
-                </li>
-                <li className="relative pl-6">
-                  <span className="absolute left-0 top-1 text-[#059669] text-xs">✦</span>
-                  <strong className="text-[#112a1a] font-bold">Breadth of Horizons:</strong> <span className="text-[#2d4a35]">They are attracted to a wide variety of fields, helping to maintain independence in any situation.</span>
-                </li>
-              </ul>
-            </div>
-          )
-        },
-        {
-          id: "essence",
-          title: "The Main Lesson",
-          content: (
-            <div className="bg-[#112a1a] p-6 sm:p-10 rounded-3xl border-l-4 border-[#059669] shadow-xl mt-12 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#059669]/10 rounded-full blur-3xl pointer-events-none"></div>
-              <p className="text-lg sm:text-xl md:text-2xl font-['Cinzel',serif] text-[#059669] leading-relaxed mb-4 relative z-10">
-                True strength lies in the ability to dance with the wind.
-              </p>
-              <p className="text-[#c2dec9] font-light leading-relaxed relative z-10 text-xs sm:text-sm md:text-base">
-                Swati does not call for a hard struggle or blind resistance. Its energy teaches us to maintain our inner core, softly and flexibly adapting to any changing conditions.
-              </p>
-            </div>
-          )
-        }
-      ]
-    },
-    other_articles: [
-      { id: "ashvini", tag: "Nakshatras", title: "Ashwini Nakshatra: The Impulse of Beginning and Thirst for Speed", date: "July 24, 2026" },
-      { id: "saturn-pisces", tag: "Transits", title: "Saturn in Pisces: Deep Karmic Lessons and the Dissolution of Ego", date: "July 18, 2026" }
     ]
   }
 };
@@ -393,14 +66,34 @@ export default function ArticlesPage() {
   const [currentLang, setCurrentLang] = useState('RU');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('nakshatras');
-  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null); // ИЗМЕНЕНО: по умолчанию null для отображения главного каталога
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+
+  // Динамические состояния для работы с базой данных
+  const [dbArticles, setDbArticles] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedLang = localStorage.getItem('mira_lang');
       if (savedLang) setCurrentLang(savedLang);
     }
+    fetchArticles();
   }, []);
+
+  async function fetchArticles() {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      setDbArticles(data);
+    } else if (error) {
+      console.error("Ошибка загрузки статей:", error.message);
+    }
+    setIsLoading(false);
+  }
 
   const handleLangChange = (code: string) => {
     setCurrentLang(code);
@@ -409,15 +102,10 @@ export default function ArticlesPage() {
   };
 
   const t = DICTIONARY[currentLang];
-  const articleData = t.article;
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const y = element.getBoundingClientRect().top + window.scrollY - 90;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-    }
-  };
+  // Фильтрация статей по активной вкладке
+  const filteredArticles = dbArticles.filter(art => art.category === activeTab);
+  const selectedDbArticle = dbArticles.find(art => art.id === selectedArticleId);
 
   return (
     <div className="min-h-screen bg-[#ecf4e3] text-[#2d4a35] font-['Montserrat',sans-serif] selection:bg-[#059669] selection:text-white [-webkit-tap-highlight-color:transparent] relative">
@@ -427,9 +115,6 @@ export default function ArticlesPage() {
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(208, 229, 192, 0.5); }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(5, 150, 105, 0.4); border-radius: 10px; }
-        .drop-cap > p:first-of-type::first-letter {
-          float: left; font-family: 'Cinzel', serif; font-size: 4.5rem; line-height: 0.8; padding-right: 0.6rem; padding-top: 0.1rem; color: #059669;
-        }
       `}} />
 
       {isLangOpen && <div className="fixed inset-0 z-40" onClick={() => setIsLangOpen(false)} />}
@@ -472,7 +157,7 @@ export default function ArticlesPage() {
         </div>
       </header>
 
-      {/* КАТАЛОГ С РАЗДЕЛАМИ ИЛИ ПРОСМОТР СТАТЬИ */}
+      {/* КАТАЛОГ С РАЗДЕЛАМИ */}
       {!selectedArticleId ? (
         <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-16">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -484,7 +169,6 @@ export default function ArticlesPage() {
             </p>
           </div>
 
-          {/* ВКЛАДКИ РАЗДЕЛОВ */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
             {t.tabs.map((tab: any) => (
               <button
@@ -501,92 +185,75 @@ export default function ArticlesPage() {
             ))}
           </div>
 
-          {/* СЕТКА МАТЕРИАЛОВ ВЫБРАННОГО РАЗДЕЛА */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {t.articles[activeTab]?.map((art: any) => (
-              <div
-                key={art.id}
-                onClick={() => setSelectedArticleId(art.id)}
-                className="group bg-white border border-[#d0e5c0] rounded-3xl p-8 hover:border-[#059669] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-center text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-3">
-                    <span>{art.category}</span>
-                    <span>{art.date}</span>
+          {isLoading ? (
+            <div className="text-center py-20 text-[#059669] font-bold animate-pulse tracking-widest uppercase">
+              Синхронизация с базой данных...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredArticles.length === 0 ? (
+                 <p className="text-center col-span-2 text-[#4a6b52] italic py-10">В этом разделе пока нет опубликованных материалов.</p>
+              ) : (
+                filteredArticles.map((art: any) => (
+                  <div
+                    key={art.id}
+                    onClick={() => setSelectedArticleId(art.id)}
+                    className="group bg-white border border-[#d0e5c0] rounded-3xl p-8 hover:border-[#059669] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-center text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-3">
+                        <span>{art.category === 'nakshatras' ? 'Накшатры' : art.category === 'horoscopes' ? 'Гороскопы' : 'Аюрведа'}</span>
+                        <span>{art.date_str}</span>
+                      </div>
+                      <h3 className="text-xl font-['Cinzel',serif] font-bold text-[#112a1a] group-hover:text-[#059669] transition-colors mb-3 leading-snug">
+                        {art.title}
+                      </h3>
+                      <p className="text-xs md:text-sm text-[#4a6b52] font-medium leading-relaxed">
+                        {art.excerpt}
+                      </p>
+                    </div>
+                    <div className="mt-6 pt-4 border-t border-[#ecf4e3] flex items-center justify-between text-xs font-bold text-[#059669]">
+                      <span>{art.read_time}</span>
+                      <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">Читать →</span>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-['Cinzel',serif] font-bold text-[#112a1a] group-hover:text-[#059669] transition-colors mb-3 leading-snug">
-                    {art.title}
-                  </h3>
-                  <p className="text-xs md:text-sm text-[#4a6b52] font-medium leading-relaxed">
-                    {art.excerpt}
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-[#ecf4e3] flex items-center justify-between text-xs font-bold text-[#059669]">
-                  <span>{art.readTime}</span>
-                  <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">Читать →</span>
-                </div>
-              </div>
-            ))}
-          </div>
+                ))
+              )}
+            </div>
+          )}
         </main>
       ) : (
-        <main className="max-w-[1300px] mx-auto flex flex-col lg:flex-row items-start pt-8 sm:pt-12 md:pt-16 px-4 md:px-8 pb-24 gap-8 lg:gap-16">
-          <aside className="hidden lg:block w-72 sticky top-28 flex-shrink-0">
-            <div className="text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-4">{t.toc}</div>
-            <nav className="flex flex-col gap-3.5 border-l border-[#d0e5c0] pl-4">
-              {articleData.sections.map((section: any) => (
-                <button key={section.id} onClick={() => scrollToSection(section.id)} className="text-left text-xs font-semibold text-[#4a6b52] hover:text-[#059669] transition-all hover:translate-x-1 duration-300">
-                  {section.title}
-                </button>
-              ))}
-            </nav>
-          </aside>
+        /* ПРОСМОТР КОНКРЕТНОЙ СТАТЬИ ИЗ БАЗЫ */
+        <main className="max-w-[900px] mx-auto flex flex-col pt-8 sm:pt-12 md:pt-16 px-4 md:px-8 pb-24">
+          {selectedDbArticle && (
+            <article className="w-full">
+              <header className="mb-10 sm:mb-14 text-center">
+                <div className="inline-block px-3 py-1 mb-4 rounded-full border border-[#059669]/20 bg-[#059669]/10 text-[#059669] text-[9px] sm:text-xs uppercase tracking-widest font-bold">
+                  {selectedDbArticle.category === 'nakshatras' ? 'Накшатры' : selectedDbArticle.category === 'horoscopes' ? 'Гороскопы' : 'Аюрведа'}
+                </div>
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-[#112a1a] leading-[1.25] tracking-wide mb-6">
+                  {selectedDbArticle.title}
+                </h1>
+                <div className="text-sm font-semibold text-[#4a6b52] mb-6">{selectedDbArticle.date_str} • {selectedDbArticle.read_time}</div>
 
-          <article className="flex-1 w-full max-w-3xl mx-auto lg:mx-0">
-            <header className="mb-10 sm:mb-14">
-              <div className="inline-block px-3 py-1 mb-4 rounded-full border border-[#059669]/20 bg-[#059669]/10 text-[#059669] text-[9px] sm:text-xs uppercase tracking-widest font-bold">
-                {articleData.category}
-              </div>
-              <h1 className="text-2xl sm:text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-[#112a1a] leading-[1.25] tracking-wide">
-                {articleData.title}
-              </h1>
-            </header>
+                {selectedDbArticle.image_url && (
+                   <img src={selectedDbArticle.image_url} alt="Обложка" className="w-full h-auto max-h-[500px] object-cover rounded-3xl shadow-lg mb-10 border border-[#d0e5c0]" />
+                )}
+              </header>
 
-            <div className="space-y-12 sm:space-y-16 text-sm sm:text-base md:text-lg leading-[1.75] font-medium">
-              {articleData.sections.map((section: any) => (
-                <section id={section.id} key={section.id} className="scroll-mt-28">
-                  {section.id !== 'intro' && section.id !== 'essence' && (
-                    <h2 className="text-xl sm:text-2xl font-['Cinzel',serif] font-bold text-[#112a1a] mb-6 pb-3 border-b border-[#d0e5c0]">
-                      {section.title}
-                    </h2>
-                  )}
-                  {section.content}
-                </section>
-              ))}
-            </div>
-
-            <section className="mt-20 pt-12 border-t border-[#d0e5c0]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-3">
-                <h3 className="text-lg sm:text-xl font-['Cinzel',serif] font-bold text-[#112a1a] tracking-wider">
-                  {t.read_more}
-                </h3>
-                <button onClick={() => setSelectedArticleId(null)} className="text-xs font-bold tracking-widest uppercase text-[#059669] hover:text-[#112a1a] transition-colors flex items-center gap-1.5">
-                  {t.all_articles} →
-                </button>
+              <div className="text-sm sm:text-base md:text-lg leading-[1.8] font-medium text-[#2d4a35] whitespace-pre-wrap">
+                {selectedDbArticle.content}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {t.other_articles.map((article: any) => (
-                  <div key={article.id} onClick={() => { setSelectedArticleId(article.id); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="group block bg-white border border-[#d0e5c0] rounded-2xl p-6 hover:border-[#059669] transition-all duration-300 hover:shadow-md relative overflow-hidden cursor-pointer">
-                    <div className="text-[9px] sm:text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-2">{article.tag} • {article.date}</div>
-                    <h4 className="text-sm sm:text-base font-['Cinzel',serif] font-bold text-[#112a1a] group-hover:text-[#059669] transition-colors leading-snug">
-                      {article.title}
-                    </h4>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </article>
+              <section className="mt-20 pt-12 border-t border-[#d0e5c0]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-center gap-3">
+                  <button onClick={() => setSelectedArticleId(null)} className="px-8 py-4 bg-[#059669] text-white rounded-xl text-xs font-bold tracking-widest uppercase hover:bg-[#047857] transition-colors shadow-md">
+                    ← {t.all_articles}
+                  </button>
+                </div>
+              </section>
+            </article>
+          )}
         </main>
       )}
     </div>
