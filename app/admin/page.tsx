@@ -28,6 +28,17 @@ type NakshatraDay = {
   time_en_2: string; text_en_2: string;
 };
 
+// Вспомогательная функция для перевода системных категорий в админке
+const getCategoryLabel = (cat: string) => {
+  const map: Record<string, string> = {
+    nakshatras: 'Накшатры',
+    horoscopes: 'Гороскопы',
+    ayurveda: 'Аюрведа',
+    forecasts: 'Прогнозы'
+  };
+  return map[cat] || cat;
+};
+
 export default function AdminDashboard() {
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [retrogrades, setRetrogrades] = useState<any[]>([]);
@@ -680,6 +691,7 @@ export default function AdminDashboard() {
                           <option value="nakshatras">Накшатры</option>
                           <option value="horoscopes">Гороскопы известных личностей</option>
                           <option value="ayurveda">Аюрведа</option>
+                          <option value="forecasts">Прогнозы</option>
                         </select>
                       </div>
                     </div>
@@ -721,7 +733,7 @@ export default function AdminDashboard() {
                       {articlesList.map(art => (
                         <div key={art.id} className="bg-[#030407] border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
                           <div>
-                            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-950/60 px-2.5 py-1 rounded-md border border-indigo-900/50">{art.category}</span>
+                            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-950/60 px-2.5 py-1 rounded-md border border-indigo-900/50">{getCategoryLabel(art.category)}</span>
                             <h3 className="text-base font-bold text-white mt-3 mb-2 font-['Cinzel',serif]">{art.title}</h3>
                             <p className="text-xs text-gray-400 line-clamp-2">{art.excerpt}</p>
                           </div>

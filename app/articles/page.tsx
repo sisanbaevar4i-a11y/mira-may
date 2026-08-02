@@ -14,8 +14,10 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     tabs: [
       { id: "nakshatras", name: "Накшатры" },
       { id: "horoscopes", name: "Гороскопы личностей" },
-      { id: "ayurveda", name: "Аюрведа" }
-    ]
+      { id: "ayurveda", name: "Аюрведа" },
+      { id: "forecasts", name: "Прогнозы" }
+    ],
+    empty_state: "В этом разделе пока нет опубликованных материалов."
   },
   EN: {
     back: "Knowledge Library",
@@ -26,8 +28,10 @@ const DICTIONARY: Record<string, Record<string, any>> = {
     tabs: [
       { id: "nakshatras", name: "Nakshatras" },
       { id: "horoscopes", name: "Famous Horoscopes" },
-      { id: "ayurveda", name: "Ayurveda" }
-    ]
+      { id: "ayurveda", name: "Ayurveda" },
+      { id: "forecasts", name: "Forecasts" }
+    ],
+    empty_state: "There are no published materials in this section yet."
   }
 };
 
@@ -62,13 +66,33 @@ const GlobeIcon = () => (
   </svg>
 );
 
+// Утилита для динамического перевода категорий
+const getCategoryName = (cat: string, lang: string) => {
+  if (lang === 'RU') {
+    switch(cat) {
+      case 'nakshatras': return 'Накшатры';
+      case 'horoscopes': return 'Гороскопы';
+      case 'ayurveda': return 'Аюрведа';
+      case 'forecasts': return 'Прогнозы';
+      default: return cat;
+    }
+  } else {
+    switch(cat) {
+      case 'nakshatras': return 'Nakshatras';
+      case 'horoscopes': return 'Horoscopes';
+      case 'ayurveda': return 'Ayurveda';
+      case 'forecasts': return 'Forecasts';
+      default: return cat;
+    }
+  }
+};
+
 export default function ArticlesPage() {
   const [currentLang, setCurrentLang] = useState('RU');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('nakshatras');
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
 
-  // Динамические состояния для работы с базой данных
   const [dbArticles, setDbArticles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -103,7 +127,6 @@ export default function ArticlesPage() {
 
   const t = DICTIONARY[currentLang];
 
-  // Фильтрация статей по активной вкладке
   const filteredArticles = dbArticles.filter(art => art.category === activeTab);
   const selectedDbArticle = dbArticles.find(art => art.id === selectedArticleId);
 
@@ -157,7 +180,6 @@ export default function ArticlesPage() {
         </div>
       </header>
 
-      {/* КАТАЛОГ С РАЗДЕЛАМИ */}
       {!selectedArticleId ? (
         <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-16">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -192,17 +214,17 @@ export default function ArticlesPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredArticles.length === 0 ? (
-                 <p className="text-center col-span-2 text-[#4a6b52] italic py-10">В этом разделе пока нет опубликованных материалов.</p>
+                 <p className="text-center col-span-2 text-[#4a6b52] italic py-10">{t.empty_state}</p>
               ) : (
                 filteredArticles.map((art: any) => (
                   <div
                     key={art.id}
                     onClick={() => setSelectedArticleId(art.id)}
-                    className="group bg-white border border-[#d0e5c0] rounded-3xl p-8 hover:border-[#059669] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between"
+                    className="group bg-white border border-[#d0e5c0] rounded-3xl p-8 hover:border-[#059669] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between animate-fade-in-up"
                   >
                     <div>
                       <div className="flex justify-between items-center text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-3">
-                        <span>{art.category === 'nakshatras' ? 'Накшатры' : art.category === 'horoscopes' ? 'Гороскопы' : 'Аюрведа'}</span>
+                        <span>{getCategoryName(art.category, currentLang)}</span>
                         <span>{art.date_str}</span>
                       </div>
                       <h3 className="text-xl font-['Cinzel',serif] font-bold text-[#112a1a] group-hover:text-[#059669] transition-colors mb-3 leading-snug">
@@ -223,13 +245,12 @@ export default function ArticlesPage() {
           )}
         </main>
       ) : (
-        /* ПРОСМОТР КОНКРЕТНОЙ СТАТЬИ ИЗ БАЗЫ */
         <main className="max-w-[900px] mx-auto flex flex-col pt-8 sm:pt-12 md:pt-16 px-4 md:px-8 pb-24">
           {selectedDbArticle && (
-            <article className="w-full">
+            <article className="w-full animate-fade-in-up">
               <header className="mb-10 sm:mb-14 text-center">
                 <div className="inline-block px-3 py-1 mb-4 rounded-full border border-[#059669]/20 bg-[#059669]/10 text-[#059669] text-[9px] sm:text-xs uppercase tracking-widest font-bold">
-                  {selectedDbArticle.category === 'nakshatras' ? 'Накшатры' : selectedDbArticle.category === 'horoscopes' ? 'Гороскопы' : 'Аюрведа'}
+                  {getCategoryName(selectedDbArticle.category, currentLang)}
                 </div>
                 <h1 className="text-2xl sm:text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-[#112a1a] leading-[1.25] tracking-wide mb-6">
                   {selectedDbArticle.title}
