@@ -46,7 +46,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     modal_fallback: "Прогноз для данного периода еще не загружен в ядро. Ожидайте синхронизации.",
     planetarium_badge: "Собственная визуализация",
     planetarium_title: "Интерактивная сфера",
-    planetarium_desc: "Введите город и точную дату рождения, чтобы ядро рассчитало карту звездного неба в тот момент.",
+    planetarium_desc: "Введите город, точную дату и время рождения, чтобы ядро рассчитало карту звездного неба в тот момент.",
     calendar_title: "Календарь накшатр",
     calendar_time: "МСК (UTC+3)"
   },
@@ -91,7 +91,7 @@ const DICTIONARY: Record<string, Record<string, string>> = {
     modal_fallback: "Forecast for this period has not been loaded into the core yet. Awaiting synchronization.",
     planetarium_badge: "Proprietary Visualization",
     planetarium_title: "Interactive Sphere",
-    planetarium_desc: "Enter a city and exact birth date to let the core calculate the starfield map at that moment.",
+    planetarium_desc: "Enter a city, exact birth date, and time to let the core calculate the starfield map at that moment.",
     calendar_title: "Nakshatra Calendar",
     calendar_time: "MSK (UTC+3)"
   }
@@ -418,11 +418,13 @@ export default function Home() {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isEphLoading, setIsEphLoading] = useState(true);
 
-  // Параметры интерактивного неба с поддержкой точной даты
+  // Параметры интерактивного неба с поддержкой точной даты и времени
   const [cityInput, setCityInput] = useState("Tallinn, Estonia");
   const [dayInput, setDayInput] = useState("15");
   const [monthInput, setMonthInput] = useState("08");
   const [yearInput, setYearInput] = useState("2005");
+  const [hourInput, setHourInput] = useState("14");
+  const [minuteInput, setMinuteInput] = useState("30");
   const [coordsOutput, setCoordsOutput] = useState("59°26'11\"N 24°45'19\"E");
   const [skySeed, setSkySeed] = useState("default-seed");
 
@@ -431,7 +433,7 @@ export default function Home() {
     const randomLat = (Math.random() * 120 - 60).toFixed(2);
     const randomLon = (Math.random() * 360 - 180).toFixed(2);
     setCoordsOutput(`${Math.abs(Number(randomLat))}° ${randomLat >= 0 ? 'N' : 'S'}, ${Math.abs(Number(randomLon))}° ${randomLon >= 0 ? 'E' : 'W'}`);
-    setSkySeed(cityInput + dayInput + monthInput + yearInput + Date.now());
+    setSkySeed(cityInput + dayInput + monthInput + yearInput + hourInput + minuteInput + Date.now());
   };
 
   const t = DICTIONARY[currentLang];
@@ -785,51 +787,44 @@ export default function Home() {
               {t.planetarium_desc}
             </p>
 
-            {/* ПАНЕЛЬ ВВОДА ГОРОДА И ДАТЫ (ДЕНЬ, МЕСЯЦ, ГОД) */}
-            <form onSubmit={handleUpdateSky} className="mt-6 flex flex-col md:flex-row justify-center items-center gap-3 max-w-2xl mx-auto">
+            {/* ПАНЕЛЬ ВВОДА ГОРОДА, ДАТЫ И ВРЕМЕНИ */}
+            <form onSubmit={handleUpdateSky} className="mt-8 flex flex-col xl:flex-row justify-center items-center gap-4 max-w-4xl mx-auto">
               <input
                 type="text"
                 value={cityInput}
                 onChange={(e) => setCityInput(e.target.value)}
                 placeholder="Город..."
-                className="bg-white border border-[#d0e5c0] rounded-xl px-4 py-2.5 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-full md:flex-1 font-medium"
+                className="bg-white border border-[#d0e5c0] rounded-xl px-4 py-3 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-full xl:flex-1 font-bold"
               />
-              <div className="flex gap-2 w-full md:w-auto justify-center">
-                <input
-                  type="text"
-                  value={dayInput}
-                  onChange={(e) => setDayInput(e.target.value)}
-                  placeholder="ДД"
-                  maxLength={2}
-                  className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-2.5 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-14 font-medium text-center"
-                />
-                <input
-                  type="text"
-                  value={monthInput}
-                  onChange={(e) => setMonthInput(e.target.value)}
-                  placeholder="ММ"
-                  maxLength={2}
-                  className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-2.5 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-14 font-medium text-center"
-                />
-                <input
-                  type="text"
-                  value={yearInput}
-                  onChange={(e) => setYearInput(e.target.value)}
-                  placeholder="ГГГГ"
-                  maxLength={4}
-                  className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-2.5 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-20 font-medium text-center"
-                />
+
+              <div className="flex gap-2 w-full xl:w-auto justify-center items-center flex-wrap sm:flex-nowrap">
+                {/* ДАТА */}
+                <div className="flex gap-2 items-center">
+                  <input type="text" value={dayInput} onChange={(e) => setDayInput(e.target.value)} placeholder="ДД" maxLength={2} className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-3 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-12 sm:w-[3.5rem] font-bold text-center" />
+                  <input type="text" value={monthInput} onChange={(e) => setMonthInput(e.target.value)} placeholder="ММ" maxLength={2} className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-3 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-12 sm:w-[3.5rem] font-bold text-center" />
+                  <input type="text" value={yearInput} onChange={(e) => setYearInput(e.target.value)} placeholder="ГГГГ" maxLength={4} className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-3 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-16 sm:w-[4.5rem] font-bold text-center" />
+                </div>
+
+                <div className="w-[2px] h-6 bg-[#059669]/30 mx-1 hidden sm:block"></div>
+
+                {/* ВРЕМЯ */}
+                <div className="flex gap-2 items-center">
+                    <input type="text" value={hourInput} onChange={(e) => setHourInput(e.target.value)} placeholder="ЧЧ" maxLength={2} className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-3 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-12 sm:w-[3.5rem] font-bold text-center" />
+                    <span className="text-[#059669] font-extrabold text-xl leading-none mb-1">:</span>
+                    <input type="text" value={minuteInput} onChange={(e) => setMinuteInput(e.target.value)} placeholder="ММ" maxLength={2} className="bg-white border border-[#d0e5c0] rounded-xl px-2 py-3 text-sm text-[#112a1a] focus:outline-none focus:border-[#059669] shadow-sm w-12 sm:w-[3.5rem] font-bold text-center" />
+                </div>
               </div>
+
               <button
                 type="submit"
-                className="bg-[#059669] text-white px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider font-bold hover:bg-[#047857] transition-all shadow-sm active:scale-95 w-full md:w-auto"
+                className="bg-[#059669] text-white px-6 py-3 rounded-xl text-xs uppercase tracking-widest font-bold hover:bg-[#047857] transition-all shadow-sm active:scale-95 w-full xl:w-auto shrink-0"
               >
                 Синхронизировать
               </button>
             </form>
           </div>
 
-          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-gradient-to-br from-[#021c0e] to-[#0a2e18]">
+          <div className="relative w-full aspect-[4/3] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden border border-[#059669]/30 shadow-[0_0_30px_rgba(5,150,105,0.15)] group bg-gradient-to-br from-[#021c0e] to-[#0a2e18] mt-8">
 
             <StarField seedKey={skySeed} />
 
@@ -839,7 +834,8 @@ export default function Home() {
             </div>
 
             <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex flex-col items-end gap-1 text-[8px] md:text-[10px] text-[#6ee7b7] tracking-widest font-mono pointer-events-none font-bold">
-              <span className="text-[#a7f3d0]">LOC: {cityInput.toUpperCase()} ({dayInput}.{monthInput}.{yearInput})</span>
+              <span className="text-[#a7f3d0]">LOC: {cityInput.toUpperCase()}</span>
+              <span className="text-[#a7f3d0]">DATE: {dayInput}.{monthInput}.{yearInput} {hourInput}:{minuteInput}</span>
               <span>COORD: {coordsOutput}</span>
             </div>
 
