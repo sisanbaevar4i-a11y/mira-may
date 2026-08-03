@@ -179,69 +179,78 @@ export default function ArticlesPage() {
       </header>
 
       {!selectedArticleId ? (
-        <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-16">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <h1 className="text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-[#112a1a] uppercase tracking-wide mb-4">
-              {t.library_title}
-            </h1>
-            <p className="text-sm md:text-base text-[#4a6b52] font-medium leading-relaxed">
-              {t.library_subtitle}
-            </p>
-          </div>
+        <div className="flex flex-col w-full">
+          {/* ТЕМНО-ЗЕЛЕНАЯ ШАПКА ДЛЯ СЛОВА "ПУБЛИКАЦИИ" */}
+          <section className="w-full bg-gradient-to-br from-[#021c0e] to-[#0a2e18] border-b border-[#059669]/30 py-16 md:py-24 relative overflow-hidden flex justify-center items-center shadow-inner">
+            {/* Декоративное свечение */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#059669] via-transparent to-transparent pointer-events-none"></div>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {t.tabs.map((tab: any) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-[#059669] text-white shadow-md'
-                    : 'bg-white text-[#4a6b52] border border-[#d0e5c0] hover:border-[#059669]'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-20 text-[#059669] font-bold animate-pulse tracking-widest uppercase">
-              Синхронизация с базой данных...
+            <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
+              <h1 className="text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-white uppercase tracking-widest mb-4 drop-shadow-[0_0_20px_rgba(5,150,105,0.6)]">
+                {t.library_title}
+              </h1>
+              <p className="text-sm md:text-base text-[#a7f3d0] font-medium leading-relaxed">
+                {t.library_subtitle}
+              </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredArticles.length === 0 ? (
-                 <p className="text-center col-span-2 text-[#4a6b52] italic py-10">{t.empty_state}</p>
-              ) : (
-                filteredArticles.map((art: any) => (
-                  <div
-                    key={art.id}
-                    onClick={() => setSelectedArticleId(art.id)}
-                    className="group bg-white border border-[#d0e5c0] rounded-3xl p-8 hover:border-[#059669] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between animate-fade-in-up"
-                  >
-                    <div>
-                      <div className="flex justify-between items-center text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-3">
-                        <span>{getCategoryName(art.category, currentLang)}</span>
-                        <span>{art.date_str}</span>
+          </section>
+
+          {/* КОНТЕЙНЕР СО СТАТЬЯМИ */}
+          <main className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-12 md:py-16">
+            <div className="flex flex-wrap justify-center gap-3 mb-12">
+              {t.tabs.map((tab: any) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-[#059669] text-white shadow-md'
+                      : 'bg-white text-[#4a6b52] border border-[#d0e5c0] hover:border-[#059669]'
+                  }`}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-20 text-[#059669] font-bold animate-pulse tracking-widest uppercase">
+                Синхронизация с базой данных...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredArticles.length === 0 ? (
+                   <p className="text-center col-span-2 text-[#4a6b52] italic py-10">{t.empty_state}</p>
+                ) : (
+                  filteredArticles.map((art: any) => (
+                    <div
+                      key={art.id}
+                      onClick={() => setSelectedArticleId(art.id)}
+                      className="group bg-white border border-[#d0e5c0] rounded-3xl p-8 hover:border-[#059669] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between animate-fade-in-up"
+                    >
+                      <div>
+                        <div className="flex justify-between items-center text-[10px] text-[#059669] uppercase tracking-widest font-bold mb-3">
+                          <span>{getCategoryName(art.category, currentLang)}</span>
+                          <span>{art.date_str}</span>
+                        </div>
+                        <h3 className="text-xl font-['Cinzel',serif] font-bold text-[#112a1a] group-hover:text-[#059669] transition-colors mb-3 leading-snug">
+                          {art.title}
+                        </h3>
+                        <p className="text-xs md:text-sm text-[#4a6b52] font-medium leading-relaxed">
+                          {art.excerpt}
+                        </p>
                       </div>
-                      <h3 className="text-xl font-['Cinzel',serif] font-bold text-[#112a1a] group-hover:text-[#059669] transition-colors mb-3 leading-snug">
-                        {art.title}
-                      </h3>
-                      <p className="text-xs md:text-sm text-[#4a6b52] font-medium leading-relaxed">
-                        {art.excerpt}
-                      </p>
+                      <div className="mt-6 pt-4 border-t border-[#ecf4e3] flex items-center justify-between text-xs font-bold text-[#059669]">
+                        <span>{art.read_time}</span>
+                        <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">Читать →</span>
+                      </div>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-[#ecf4e3] flex items-center justify-between text-xs font-bold text-[#059669]">
-                      <span>{art.read_time}</span>
-                      <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">Читать →</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </main>
+                  ))
+                )}
+              </div>
+            )}
+          </main>
+        </div>
       ) : (
         <main className="max-w-[900px] mx-auto flex flex-col pt-8 sm:pt-12 md:pt-16 px-4 md:px-8 pb-24">
           {selectedDbArticle && (
