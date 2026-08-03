@@ -182,7 +182,6 @@ export default function ArticlesPage() {
         <div className="flex flex-col w-full">
           {/* ТЕМНО-ЗЕЛЕНАЯ ШАПКА ДЛЯ СЛОВА "ПУБЛИКАЦИИ" */}
           <section className="w-full bg-gradient-to-br from-[#021c0e] to-[#0a2e18] border-b border-[#059669]/30 py-16 md:py-24 relative overflow-hidden flex justify-center items-center shadow-inner">
-            {/* Декоративное свечение */}
             <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#059669] via-transparent to-transparent pointer-events-none"></div>
 
             <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
@@ -252,17 +251,17 @@ export default function ArticlesPage() {
           </main>
         </div>
       ) : (
-        <main className="max-w-[900px] mx-auto flex flex-col pt-8 sm:pt-12 md:pt-16 px-4 md:px-8 pb-24">
+        <main className="max-w-[900px] mx-auto flex flex-col pt-28 md:pt-36 px-4 md:px-8 pb-24">
           {selectedDbArticle && (
             <article className="w-full animate-fade-in-up">
-              <header className="mb-10 sm:mb-14 text-center">
+              <header className="mb-10 sm:mb-14">
                 <div className="inline-block px-3 py-1 mb-4 rounded-full border border-[#059669]/20 bg-[#059669]/10 text-[#059669] text-[9px] sm:text-xs uppercase tracking-widest font-bold">
                   {getCategoryName(selectedDbArticle.category, currentLang)}
                 </div>
-                <h1 className="text-2xl sm:text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-[#112a1a] leading-[1.25] tracking-wide mb-6">
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-['Cinzel',serif] font-bold text-[#112a1a] leading-[1.25] tracking-wide mb-4">
                   {selectedDbArticle.title}
                 </h1>
-                <div className="text-sm font-semibold text-[#4a6b52] mb-6">{selectedDbArticle.date_str} • {selectedDbArticle.read_time}</div>
+                <div className="text-sm font-semibold text-[#4a6b52] mb-8">{selectedDbArticle.date_str} • {selectedDbArticle.read_time}</div>
 
                 {selectedDbArticle.image_url && (
                    <img src={selectedDbArticle.image_url} alt="Обложка" className="w-full h-auto max-h-[500px] object-cover rounded-3xl shadow-lg mb-10 border border-[#d0e5c0]" />
@@ -274,7 +273,7 @@ export default function ArticlesPage() {
               </div>
 
               <section className="mt-20 pt-12 border-t border-[#d0e5c0]">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-3">
                   <button onClick={() => setSelectedArticleId(null)} className="px-8 py-4 bg-[#059669] text-white rounded-xl text-xs font-bold tracking-widest uppercase hover:bg-[#047857] transition-colors shadow-md">
                     ← {t.all_articles}
                   </button>
